@@ -109,6 +109,12 @@ class AudioControl(context: Context) {
         AppLog.i("Audio", "Music playing after stop: ${audio.isMusicActive}")
     }
 
+    /** The general Play key goes to the app that played last; after a snooze that's TIDAL, paused by Lavender. */
+    fun sendPlayKey() {
+        audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY))
+        audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PLAY))
+    }
+
     fun restoreVolumes() {
         savedMusic?.let { set(AudioManager.STREAM_MUSIC, it) }
         savedAlarm?.let { set(AudioManager.STREAM_ALARM, it) }

@@ -116,7 +116,8 @@ class AlarmService : Service() {
 
             val item = alarm.tidalItem
             if (item != null && tidalUsable()) {
-                playTidal(alarm, item)
+                // The alarm as loaded still carries its snooze time: this ring ends a snooze.
+                playTidal(alarm, item, resume = alarm.snoozedUntil != null)
             } else {
                 playBackup(alarm, tidalFailed = item != null)
             }
@@ -156,12 +157,25 @@ class AlarmService : Service() {
     private fun tidalUsable(): Boolean =
         getSystemService(UserManager::class.java).isUserUnlocked && TidalLauncher.isInstalled(this)
 
-    private suspend fun playTidal(alarm: Alarm, item: TidalItem) {
+    private suspend fun playTidal(alarm: Alarm, item: TidalItem, resume: Boolean) {
         RingController.setSound(RingController.Sound.TIDAL_STARTING)
         goForeground(alarm, getString(R.string.ringing_starting_tidal))
         // Something else already playing (a podcast left running overnight) would look like TIDAL started.
         audio.stopOtherPlayback()
         audio.prepareMusic(alarm.volumePercent, alarm.rampSeconds)
+
+        if (resume) {
+            // After a snooze TIDAL still has the playlist loaded (Lavender paused it), and then ignores the
+            // play link. The Play key resumes it where it stopped, and doesn't even need the ringing screen.
+            AppLog.i(TAG, "Snooze over: resuming TIDAL with the Play key")
+            audio.sendPlayKey()
+            if (audio.waitForMusic(RESUME_WAIT_MS)) {
+                AppLog.i(TAG, "TIDAL resumed")
+                keepPlaying(alarm, item)
+                return
+            }
+            AppLog.w(TAG, "Play key didn't resume TIDAL within ${RESUME_WAIT_MS / 1000} s: opening the link instead")
+        }
 
         if (!waitForScreen(SCREEN_WAIT_MS) && !bringScreenBack(alarm, "it didn't appear on its own")) {
             // The phone is in use: Android shows a pop-up notification instead of the ringing screen,
@@ -171,7 +185,7 @@ class AlarmService : Service() {
             waitForScreen(Long.MAX_VALUE)
             AppLog.i(TAG, "Ringing screen opened: switching from backup sound to TIDAL")
             backup.stop()
-            playTidal(alarm, item)
+            playTidal(alarm, item, resume = false)
             return
         }
 
@@ -204,19 +218,24 @@ class AlarmService : Service() {
             }
             AppLog.i(TAG, if (playing) "Music detected ${System.currentTimeMillis() - openedAt} ms after opening link ${index + 1}" else "No music after link ${index + 1}")
             if (playing) {
-                RingController.setSound(RingController.Sound.TIDAL)
-                goForeground(alarm, item.title)
-                coroutineScope {
-                    val ramp = launch { audio.rampMusic(alarm.volumePercent, alarm.rampSeconds) }
-                    waitUntilSilent()
-                    ramp.cancel()
-                }
-                // TIDAL stopped playing (network gone, app closed, paused …): keep waking the user.
-                AppLog.w(TAG, "Music stopped for ${TIDAL_SILENCE_LIMIT_MS / 1000} s while ringing: backup sound")
-                playBackup(alarm, tidalFailed = true)
+                keepPlaying(alarm, item)
                 return
             }
         }
+        playBackup(alarm, tidalFailed = true)
+    }
+
+    /** TIDAL plays: raise the volume, and switch to the backup sound if the music stops. */
+    private suspend fun keepPlaying(alarm: Alarm, item: TidalItem) {
+        RingController.setSound(RingController.Sound.TIDAL)
+        goForeground(alarm, item.title)
+        coroutineScope {
+            val ramp = launch { audio.rampMusic(alarm.volumePercent, alarm.rampSeconds) }
+            waitUntilSilent()
+            ramp.cancel()
+        }
+        // TIDAL stopped playing (network gone, app closed, paused …): keep waking the user.
+        AppLog.w(TAG, "Music stopped for ${TIDAL_SILENCE_LIMIT_MS / 1000} s while ringing: backup sound")
         playBackup(alarm, tidalFailed = true)
     }
 
@@ -377,6 +396,7 @@ class AlarmService : Service() {
 
         private const val SCREEN_WAIT_MS = 5_000L
         private const val BRING_BACK_LATEST_MS = 8_000L
+        private const val RESUME_WAIT_MS = 5_000L
         private const val FIRST_LINK_WAIT_MS = 15_000L
         private const val NEXT_LINK_WAIT_MS = 10_000L
         private const val TIDAL_SILENCE_LIMIT_MS = 10_000L
