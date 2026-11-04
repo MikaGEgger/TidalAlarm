@@ -93,6 +93,8 @@ object Notifications {
             .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setOngoing(true)
             .setShowWhen(false)
+            // The text changes while ringing (TIDAL starting → playing); don't pop up again each time.
+            .setOnlyAlertOnce(true)
             .setContentIntent(ringingScreen(context, 1))
             .setFullScreenIntent(ringingScreen(context, 1), true)
             .addAction(action(context, R.string.action_snooze, serviceAction(context, AlarmService.ACTION_SNOOZE, 1)))
