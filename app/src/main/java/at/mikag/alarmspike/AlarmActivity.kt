@@ -33,6 +33,7 @@ class AlarmActivity : Activity() {
 
     val handler = Handler(Looper.getMainLooper())
     private var snoozed = false
+    private var fallbackStarted = false
     private lateinit var logView: TextView
     private val refresh: () -> Unit = { showLog() }
 
@@ -78,7 +79,7 @@ class AlarmActivity : Activity() {
     }
 
     private fun startTest() {
-        val strategy = Strategy.valueOf(intent.getStringExtra(EXTRA_STRATEGY) ?: Strategy.LINK_PLUS_TIDAL_KEY.name)
+        val strategy = Strategy.valueOf(intent.getStringExtra(EXTRA_STRATEGY) ?: Strategy.PLAY_LINK.name)
         val locked = getSystemService(KeyguardManager::class.java).isKeyguardLocked
         log("Alarm screen shown. Phone locked: $locked, media volume ${Tidal.mediaVolume(this)}")
         Tidal.run(this, handler, strategy, Prefs.link(this), Prefs.query(this), alarmMode = true) { log(it) }
@@ -87,9 +88,11 @@ class AlarmActivity : Activity() {
             log("Bringing the alarm screen back to the front")
             AlarmNotifier.show(applicationContext, strategy.name, reshow = true)
         }, 7000)
-        Tidal.checkPlaybackLater(handler, this, listOf(10, 20, 30), { log(it) }) {
-            if (!snoozed) {
-                log("No music after 30 s, starting fallback ringtone")
+        // Check every 5 s for a minute: round 2's locked test stopped by itself between 20 and 30 s.
+        Tidal.checkPlaybackLater(handler, this, (5..60 step 5).toList(), { log(it) }, fallbackFrom = 25) {
+            if (!snoozed && !fallbackStarted) {
+                fallbackStarted = true
+                log("No music, starting fallback ringtone")
                 Fallback.start(this) { log(it) }
             }
         }

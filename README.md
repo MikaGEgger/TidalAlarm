@@ -10,23 +10,27 @@ This branch holds a throwaway test app, not the real alarm app. It answers one q
 - Alarm screen over the lock screen and returning on top after TIDAL opens: works.
 - TIDAL web player inside the app: doesn't load. Dropped.
 
-## Round 2 tests
+## Round 2 results
 
-- **G**: open the link, then send Play to TIDAL only. Fixes the Audible problem, probably resumes TIDAL's last queue.
-- **H**: with notification access, control TIDAL's media session directly and try several ways to play the chosen link. The log also shows which app is playing and which song.
-- **I**: open the link with a few guessed "play" hints.
+- Play key sent to TIDAL only: nothing happens.
+- Notification access: blocked by Android for apps installed outside the Play Store ("restricted setting").
+- **Links with a play hint start TIDAL:** `https://tidal.com/browse/playlist/<id>?play=true`, `tidal://playlist/<id>?play=true` and `tidal://playlist/<id>/play` worked; `?autoplay=true` didn't.
+
+## Round 3 tests
+
+- **J**: the play links, tried one after another until music plays, the way the real alarm would do it.
+- Questions: does TIDAL play the chosen playlist/track (not just resume its last song)? Does it work for tracks? Does it work with the phone locked, and keep playing for a minute?
 
 ## Install
 
-1. On your phone, open the **test-build** release of this repo (logged in to GitHub) and download `alarm-test.apk`. It installs over round 1.
-2. Open **Alarm Test**, tap **Allow notification access** and turn it on. If the switch is greyed out: Settings → Apps → Alarm Test → ⋮ → **Allow restricted settings**, then try again.
+On your phone, open the **test-build** release of this repo (logged in to GitHub) and download `alarm-test.apk`. It installs over the previous round.
 
 ## Run the tests
 
-1. Play something in Audible briefly and pause it, before each test.
-2. Before test H, also play a song in TIDAL that is **not** in your test playlist, then pause.
-3. Run G, H and I. H takes about 45 seconds; let it finish.
-4. Pick the test that played your playlist, run the locked alarm test with it.
+1. Before each test: play something in Audible briefly and pause it. Then play a TIDAL song that's **not** in your test playlist and pause it.
+2. Run J with a playlist link. Did your playlist start, or the old song?
+3. Share a **track** from TIDAL to the app, and run J again.
+4. Locked test with J: lock the phone, let it ring for a full minute before dismissing.
 5. Tap **Copy log** and paste it into the chat with Claude, with what you heard.
 
 ## Building

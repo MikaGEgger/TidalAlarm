@@ -25,7 +25,7 @@ class AlarmReceiver : BroadcastReceiver() {
             AlarmActivity.dismissAll(context, "notification button")
             return
         }
-        val name = intent.getStringExtra(EXTRA_STRATEGY) ?: Strategy.LINK_PLUS_PLAY.name
+        val name = intent.getStringExtra(EXTRA_STRATEGY) ?: Strategy.PLAY_LINK.name
         TestLog.add(context, "=== Test alarm fired: ${Strategy.valueOf(name).label} ===")
         AlarmNotifier.show(context, name, reshow = false)
     }

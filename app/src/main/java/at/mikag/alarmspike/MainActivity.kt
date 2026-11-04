@@ -59,29 +59,34 @@ class MainActivity : Activity() {
             setText(Prefs.query(this@MainActivity))
         }
         root.addView(queryInput)
-        root.button("Allow notification access (for test H)") { openNotificationAccess() }
+        root.button("Optional: allow notification access (only for test H)") { openNotificationAccess() }
         root.note(
-            "If the switch is greyed out: open Settings → Apps → Alarm Test → ⋮ (top right) → " +
-                "Allow restricted settings, then try again."
+            "Optional, skip it if it's blocked. It lets the log show which song plays. If Android says the setting " +
+                "is unavailable: Settings → Apps → Alarm Test → ⋮ (top right) → Allow restricted settings, then try again."
         )
 
         root.heading("2 · Test with the phone unlocked")
         root.note(
-            "Before EACH test: play something in Audible for a moment and pause it, so Audible is the last " +
-                "app that played. Before test H, also play a song in TIDAL that is NOT in your test playlist, then pause it."
+            "Before EACH test: play something in Audible for a moment and pause it. Then play a song in TIDAL " +
+                "that is NOT in your test playlist and pause it too, so you can hear whether TIDAL starts YOUR " +
+                "playlist or just resumes the old song. Run J first with a playlist link, then share a TRACK from " +
+                "TIDAL to this app and run J again."
         )
         Strategy.values().forEach { strategy -> root.button(strategy.label) { runNow(strategy) } }
         root.button("Pause TIDAL") { Tidal.pause(this) { log(it) } }
 
         root.heading("3 · Test with the phone locked")
-        root.note("Pick the test that played your playlist above, schedule the alarm, lock the phone and wait.")
+        root.note(
+            "Use J. Schedule the alarm, lock the phone and wait. Let it ring for a full minute before you " +
+                "dismiss, so we see whether the music keeps playing."
+        )
         strategyPicker = Spinner(this).apply {
             adapter = ArrayAdapter(
                 this@MainActivity,
                 android.R.layout.simple_spinner_dropdown_item,
                 Strategy.values().map { it.label }
             )
-            setSelection(Strategy.LINK_PLUS_TIDAL_KEY.ordinal)
+            setSelection(Strategy.PLAY_LINK.ordinal)
         }
         root.addView(strategyPicker)
         root.button("Schedule test alarm in 1 minute") { scheduleAlarm() }
@@ -102,7 +107,7 @@ class MainActivity : Activity() {
 
         if (savedInstanceState == null) {
             log(
-                "Round 2. Device: ${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE} " +
+                "Round 3. Device:${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE} " +
                     "(API ${Build.VERSION.SDK_INT}), TIDAL app: ${Tidal.installedVersion(this) ?: "not installed"}"
             )
             handleShare(intent)
@@ -190,7 +195,7 @@ class MainActivity : Activity() {
         Tidal.run(this, handler, strategy, linkInput.text.toString(), queryInput.text.toString(), alarmMode = false) {
             log(it)
         }
-        if (!strategy.ownChecks) Tidal.checkPlaybackLater(handler, this, listOf(5, 10, 15), { log(it) }, null)
+        if (!strategy.ownChecks) Tidal.checkPlaybackLater(handler, this, listOf(10, 20, 30), { log(it) })
     }
 
     private fun scheduleAlarm() {

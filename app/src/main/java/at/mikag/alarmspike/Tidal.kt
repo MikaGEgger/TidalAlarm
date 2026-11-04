@@ -12,12 +12,11 @@ import android.net.Uri
 import android.os.Handler
 import android.view.KeyEvent
 
-/** Round 2: the ways of getting TIDAL to play that are still open after round 1. */
+/** Round 3: round 2 showed that links with a "play" hint start TIDAL. J is how the real alarm would use them. */
 enum class Strategy(val label: String, val ownChecks: Boolean) {
-    LINK_PLUS_PLAY("C: Open link, then send Play to everyone (round 1)", false),
-    LINK_PLUS_TIDAL_KEY("G: Open link, then send Play to TIDAL only", false),
-    DIRECT_CONTROL("H: Control TIDAL directly (needs notification access)", true),
-    LINK_VARIANTS("I: Try links with a \"play\" hint", true),
+    PLAY_LINK("J: Play link (tries 3 link formats until music plays)", false),
+    LINK_VARIANTS("I: Try each link format once (round 2)", true),
+    DIRECT_CONTROL("H: Control TIDAL directly (needs notification access, optional)", true),
 }
 
 object Tidal {
@@ -72,39 +71,57 @@ object Tidal {
             return
         }
         when (strategy) {
-            Strategy.LINK_PLUS_PLAY -> if (open(context, Uri.parse(item.webUrl), log)) {
-                handler.postDelayed({ mediaKey(context, KeyEvent.KEYCODE_MEDIA_PLAY, log) }, 4000)
-            }
-            Strategy.LINK_PLUS_TIDAL_KEY -> if (open(context, Uri.parse(item.webUrl), log)) {
-                handler.postDelayed({ tidalKey(context, KeyEvent.KEYCODE_MEDIA_PLAY, log) }, 4000)
-            }
+            Strategy.PLAY_LINK -> tryPlayLink(context, handler, playLinks(item), 0, log)
             Strategy.DIRECT_CONTROL -> directControl(context, handler, item, query, alarmMode, log)
             Strategy.LINK_VARIANTS -> linkVariants(context, handler, item, log)
         }
     }
 
-    /** Logs at the given seconds whether music is playing; calls onSilent if still silent at the last check. */
+    /**
+     * Logs at the given seconds whether music is playing. From [fallbackFrom] seconds on, calls onSilent
+     * at every check where nothing is playing (so music that stops later is caught too).
+     */
     fun checkPlaybackLater(
         handler: Handler,
         context: Context,
         seconds: List<Int>,
         log: (String) -> Unit,
-        onSilent: (() -> Unit)?,
+        fallbackFrom: Int = Int.MAX_VALUE,
+        onSilent: (() -> Unit)? = null,
     ) {
         for (s in seconds) {
             handler.postDelayed({
                 log("After $s s: ${playingSummary(context)}")
-                if (s == seconds.last() && !isMusicActive(context)) onSilent?.invoke()
+                if (s >= fallbackFrom && !isMusicActive(context)) onSilent?.invoke()
             }, s * 1000L)
         }
     }
 
-    /** Media key to whichever app played last (round 1: that was sometimes Audible). */
-    fun mediaKey(context: Context, keyCode: Int, log: (String) -> Unit) {
-        val audio = context.getSystemService(AudioManager::class.java)
-        audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
-        audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
-        log("Sent ${KeyEvent.keyCodeToString(keyCode)} to the last active media app")
+    // ---------- Test J: the "play" links from round 2, the way the real alarm would use them ----------
+
+    /** In the order they'd be tried. All three started music in round 2; "?autoplay=true" didn't. */
+    private fun playLinks(item: Item) = listOf(
+        "https://tidal.com/browse/${item.type}/${item.id}?play=true",
+        "tidal://${item.type}/${item.id}?play=true",
+        "tidal://${item.type}/${item.id}/play",
+    )
+
+    private fun tryPlayLink(context: Context, handler: Handler, links: List<String>, index: Int, log: (String) -> Unit) {
+        if (index >= links.size) {
+            log("J: none of the play links started music")
+            return
+        }
+        val step = "J${index + 1}"
+        log("$step: opening ${links[index]}")
+        open(context, Uri.parse(links[index]), log)
+        handler.postDelayed({
+            if (isMusicActive(context)) {
+                log("$step started music: ${playingSummary(context)}")
+            } else {
+                log("$step: no music yet")
+                tryPlayLink(context, handler, links, index + 1, log)
+            }
+        }, 7000)
     }
 
     /** Media key delivered only to TIDAL, the way a Bluetooth headset button reaches a closed app. */
