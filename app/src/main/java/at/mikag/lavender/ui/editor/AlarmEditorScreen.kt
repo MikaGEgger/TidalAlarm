@@ -189,6 +189,7 @@ private fun EditorContent(
     modifier: Modifier,
 ) {
     val context = LocalContext.current
+    val music = alarm.tidalItem
     var showTime by remember { mutableStateOf(false) }
     var showDate by remember { mutableStateOf(false) }
     var showRamp by remember { mutableStateOf(false) }
@@ -282,7 +283,6 @@ private fun EditorContent(
         )
 
         SectionTitle(stringResource(R.string.editor_sound))
-        val music = alarm.tidalItem
         ListItem(
             headlineContent = { Text(stringResource(R.string.editor_music)) },
             supportingContent = {
