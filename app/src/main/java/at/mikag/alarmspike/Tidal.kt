@@ -1,37 +1,27 @@
 package at.mikag.alarmspike
 
-import android.app.SearchManager
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioManager
-import android.media.browse.MediaBrowser
 import android.media.session.MediaController
 import android.media.session.PlaybackState
 import android.net.Uri
 import android.os.Handler
-import android.os.Looper
-import android.provider.MediaStore
-import android.service.media.MediaBrowserService
 import android.view.KeyEvent
 
-/** The different ways of asking the TIDAL app to start playing. The test finds out which ones work. */
-enum class Strategy(val label: String, val opensTidalScreen: Boolean) {
-    LINK_HTTPS("A: Open link in TIDAL (https)", true),
-    LINK_SCHEME("B: Open link in TIDAL (tidal://)", true),
-    LINK_PLUS_PLAY("C: Open link, then send Play", true),
-    PLAY_FROM_SEARCH("D: Ask TIDAL to play a search", true),
-    MEDIA_BROWSER("E: Talk to TIDAL's media service", false),
-    PLAY_KEY("F: Send Play only (resumes last song)", false),
+/** Round 2: the ways of getting TIDAL to play that are still open after round 1. */
+enum class Strategy(val label: String, val ownChecks: Boolean) {
+    LINK_PLUS_PLAY("C: Open link, then send Play to everyone (round 1)", false),
+    LINK_PLUS_TIDAL_KEY("G: Open link, then send Play to TIDAL only", false),
+    DIRECT_CONTROL("H: Control TIDAL directly (needs notification access)", true),
+    LINK_VARIANTS("I: Try links with a \"play\" hint", true),
 }
 
 object Tidal {
     const val PACKAGE = "com.aspiro.tidal"
-
-    private val main = Handler(Looper.getMainLooper())
-    private var browser: MediaBrowser? = null
 
     data class Item(val type: String, val id: String) {
         val webUrl: String get() = "https://tidal.com/browse/$type/$id"
@@ -56,45 +46,102 @@ object Tidal {
         return "${audio.getStreamVolume(AudioManager.STREAM_MUSIC)}/${audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)}"
     }
 
-    fun run(context: Context, strategy: Strategy, linkText: String, query: String, log: (String) -> Unit) {
+    fun isMusicActive(context: Context): Boolean =
+        context.getSystemService(AudioManager::class.java).isMusicActive
+
+    /** "music playing = YES", plus which app is playing and what TIDAL plays, when notification access is on. */
+    fun playingSummary(context: Context): String {
+        val base = "music playing = ${if (isMusicActive(context)) "YES" else "no"}"
+        val apps = Sessions.playingApps(context) ?: return base
+        val tidal = Sessions.tidal(context)?.let { "; TIDAL: ${Sessions.nowPlaying(it)}" } ?: ""
+        return "$base (playing apps: $apps$tidal)"
+    }
+
+    fun run(
+        context: Context,
+        handler: Handler,
+        strategy: Strategy,
+        linkText: String,
+        query: String,
+        alarmMode: Boolean,
+        log: (String) -> Unit,
+    ) {
         val item = parse(linkText)
+        if (item == null) {
+            log("No valid TIDAL link yet. Share a playlist or track from TIDAL to this app first.")
+            return
+        }
         when (strategy) {
-            Strategy.LINK_HTTPS -> open(context, item?.let { Uri.parse(it.webUrl) }, log)
-            Strategy.LINK_SCHEME -> open(context, item?.let { Uri.parse(it.schemeUrl) }, log)
-            Strategy.LINK_PLUS_PLAY -> {
-                if (open(context, item?.let { Uri.parse(it.webUrl) }, log)) {
-                    main.postDelayed({ mediaKey(context, KeyEvent.KEYCODE_MEDIA_PLAY, log) }, 4000)
-                }
+            Strategy.LINK_PLUS_PLAY -> if (open(context, Uri.parse(item.webUrl), log)) {
+                handler.postDelayed({ mediaKey(context, KeyEvent.KEYCODE_MEDIA_PLAY, log) }, 4000)
             }
-            Strategy.PLAY_FROM_SEARCH -> playFromSearch(context, query, log)
-            Strategy.MEDIA_BROWSER -> mediaBrowser(context, item, query, log)
-            Strategy.PLAY_KEY -> mediaKey(context, KeyEvent.KEYCODE_MEDIA_PLAY, log)
+            Strategy.LINK_PLUS_TIDAL_KEY -> if (open(context, Uri.parse(item.webUrl), log)) {
+                handler.postDelayed({ tidalKey(context, KeyEvent.KEYCODE_MEDIA_PLAY, log) }, 4000)
+            }
+            Strategy.DIRECT_CONTROL -> directControl(context, handler, item, query, alarmMode, log)
+            Strategy.LINK_VARIANTS -> linkVariants(context, handler, item, log)
         }
     }
 
-    /** Logs after 5, 10 and 15 seconds whether any music is actually coming out of the phone. */
-    fun checkPlaybackLater(handler: Handler, context: Context, log: (String) -> Unit, onSilent: (() -> Unit)?) {
-        for (seconds in listOf(5, 10, 15)) {
+    /** Logs at the given seconds whether music is playing; calls onSilent if still silent at the last check. */
+    fun checkPlaybackLater(
+        handler: Handler,
+        context: Context,
+        seconds: List<Int>,
+        log: (String) -> Unit,
+        onSilent: (() -> Unit)?,
+    ) {
+        for (s in seconds) {
             handler.postDelayed({
-                val playing = context.getSystemService(AudioManager::class.java).isMusicActive
-                log("After $seconds s: music playing = ${if (playing) "YES" else "no"}")
-                if (seconds == 15 && !playing) onSilent?.invoke()
-            }, seconds * 1000L)
+                log("After $s s: ${playingSummary(context)}")
+                if (s == seconds.last() && !isMusicActive(context)) onSilent?.invoke()
+            }, s * 1000L)
         }
     }
 
+    /** Media key to whichever app played last (round 1: that was sometimes Audible). */
     fun mediaKey(context: Context, keyCode: Int, log: (String) -> Unit) {
         val audio = context.getSystemService(AudioManager::class.java)
         audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
         audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
-        log("Sent media key ${KeyEvent.keyCodeToString(keyCode)}")
+        log("Sent ${KeyEvent.keyCodeToString(keyCode)} to the last active media app")
     }
 
-    private fun open(context: Context, uri: Uri?, log: (String) -> Unit): Boolean {
-        if (uri == null) {
-            log("No valid TIDAL link yet. Paste or share one first.")
-            return false
+    /** Media key delivered only to TIDAL, the way a Bluetooth headset button reaches a closed app. */
+    fun tidalKey(context: Context, keyCode: Int, log: (String) -> Unit) {
+        val probe = Intent(Intent.ACTION_MEDIA_BUTTON).setPackage(PACKAGE)
+        @Suppress("DEPRECATION")
+        val target = context.packageManager.queryBroadcastReceivers(probe, 0).firstOrNull()?.activityInfo
+        for (action in listOf(KeyEvent.ACTION_DOWN, KeyEvent.ACTION_UP)) {
+            val intent = Intent(Intent.ACTION_MEDIA_BUTTON).putExtra(Intent.EXTRA_KEY_EVENT, KeyEvent(action, keyCode))
+            if (target != null) {
+                intent.component = ComponentName(target.packageName, target.name)
+            } else {
+                intent.setPackage(PACKAGE)
+            }
+            try {
+                context.sendBroadcast(intent)
+            } catch (e: Exception) {
+                log("Couldn't send media key to TIDAL: ${e.javaClass.simpleName}: ${e.message}")
+                return
+            }
         }
+        val via = target?.let { " via ${it.name}" } ?: " (TIDAL lists no media button receiver)"
+        log("Sent ${KeyEvent.keyCodeToString(keyCode)} to TIDAL only$via")
+    }
+
+    /** Pauses TIDAL: through its media session if we have access, otherwise with a TIDAL-only media key. */
+    fun pause(context: Context, log: (String) -> Unit) {
+        val controller = Sessions.tidal(context)
+        if (controller != null) {
+            controller.transportControls.pause()
+            log("Paused TIDAL directly")
+        } else {
+            tidalKey(context, KeyEvent.KEYCODE_MEDIA_PAUSE, log)
+        }
+    }
+
+    private fun open(context: Context, uri: Uri, log: (String) -> Unit): Boolean {
         val intent = Intent(Intent.ACTION_VIEW, uri)
             .setPackage(PACKAGE)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -111,95 +158,120 @@ object Tidal {
         }
     }
 
-    private fun playFromSearch(context: Context, query: String, log: (String) -> Unit) {
-        if (query.isBlank()) {
-            log("Test D needs the playlist or track name in the second field.")
+    // ---------- Test H: TIDAL's own media session, reached through notification access ----------
+
+    private fun directControl(
+        context: Context,
+        handler: Handler,
+        item: Item,
+        query: String,
+        alarmMode: Boolean,
+        log: (String) -> Unit,
+    ) {
+        if (!Sessions.granted(context)) {
+            log("Test H needs notification access. Tap \"Allow notification access\" first.")
             return
         }
-        val intent = Intent(MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH)
-            .setPackage(PACKAGE)
-            .putExtra(SearchManager.QUERY, query)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        try {
-            context.startActivity(intent)
-            log("Asked TIDAL to play search \"$query\"")
-        } catch (e: ActivityNotFoundException) {
-            log("TIDAL doesn't accept play-from-search requests")
-        } catch (e: Exception) {
-            log("Search request failed: ${e.javaClass.simpleName}: ${e.message}")
-        }
+        if (!open(context, Uri.parse(item.webUrl), log)) return
+        handler.postDelayed({ directSteps(context, handler, item, query, alarmMode, retried = false, log) }, 3000)
     }
 
-    /** Tries to control TIDAL without opening its screen, the way Android Auto does. */
-    private fun mediaBrowser(context: Context, item: Item?, query: String, log: (String) -> Unit) {
-        val app = context.applicationContext
-        @Suppress("DEPRECATION")
-        val services = app.packageManager.queryIntentServices(
-            Intent(MediaBrowserService.SERVICE_INTERFACE).setPackage(PACKAGE), 0
-        )
-        if (services.isEmpty()) {
-            log("TIDAL offers no media service to other apps")
+    private fun directSteps(
+        context: Context,
+        handler: Handler,
+        item: Item,
+        query: String,
+        alarmMode: Boolean,
+        retried: Boolean,
+        log: (String) -> Unit,
+    ) {
+        val controller = Sessions.tidal(context)
+        if (controller == null) {
+            val others = Sessions.controllers(context)?.joinToString { it.packageName }?.ifEmpty { "none" } ?: "none"
+            if (!retried) {
+                log("TIDAL has no media session yet (sessions: $others). Waking it with Play, then Pause.")
+                tidalKey(context, KeyEvent.KEYCODE_MEDIA_PLAY, log)
+                handler.postDelayed({ tidalKey(context, KeyEvent.KEYCODE_MEDIA_PAUSE, log) }, 1500)
+                handler.postDelayed({ directSteps(context, handler, item, query, alarmMode, retried = true, log) }, 4000)
+            } else {
+                log("Still no TIDAL media session (sessions: $others). Test H can't continue.")
+            }
             return
         }
-        val info = services[0].serviceInfo
-        log("Found TIDAL media service ${info.name}")
-        browser?.disconnect()
+        log("Got TIDAL's media session. It says it supports: ${describeActions(controller.playbackState?.actions ?: 0L)}")
+        log("Before: ${Sessions.nowPlaying(controller)}")
 
-        var connecting: MediaBrowser? = null
-        val callback = object : MediaBrowser.ConnectionCallback() {
-            override fun onConnected() {
-                val connected = connecting ?: return
-                log("TIDAL accepted the media service connection")
-                val controller = MediaController(app, connected.sessionToken)
-                log("TIDAL says it supports: ${describeActions(controller.playbackState?.actions ?: 0L)}")
-                val controls = controller.transportControls
+        val controls = controller.transportControls
+        val attempts = mutableListOf<Pair<String, () -> Unit>>(
+            "playFromUri(${item.webUrl})" to { controls.playFromUri(Uri.parse(item.webUrl), null) },
+            "playFromUri(${item.schemeUrl})" to { controls.playFromUri(Uri.parse(item.schemeUrl), null) },
+            "playFromMediaId(${item.id})" to { controls.playFromMediaId(item.id, null) },
+            "playFromMediaId(${item.type}:${item.id})" to { controls.playFromMediaId("${item.type}:${item.id}", null) },
+            "playFromMediaId(${item.type}/${item.id})" to { controls.playFromMediaId("${item.type}/${item.id}", null) },
+        )
+        if (query.isNotBlank()) {
+            attempts += "playFromSearch(\"$query\")" to { controls.playFromSearch(query, null) }
+        }
+        attempts += "play() (resumes TIDAL's last queue)" to { controls.play() }
+        runAttempts(handler, controller, attempts, 0, stopWhenPlaying = alarmMode, log)
+    }
 
-                fun isPlaying() = controller.playbackState?.state == PlaybackState.STATE_PLAYING
-
-                if (item != null) {
-                    controls.playFromUri(Uri.parse(item.webUrl), null)
-                    log("Sent playFromUri(${item.webUrl})")
+    private fun runAttempts(
+        handler: Handler,
+        controller: MediaController,
+        attempts: List<Pair<String, () -> Unit>>,
+        index: Int,
+        stopWhenPlaying: Boolean,
+        log: (String) -> Unit,
+    ) {
+        if (index >= attempts.size) {
+            log("Test H finished")
+            return
+        }
+        val (name, action) = attempts[index]
+        val step = "H${index + 1}"
+        // In the diagnostic run, start each attempt from silence so every result stands on its own.
+        if (!stopWhenPlaying) controller.transportControls.pause()
+        handler.postDelayed({
+            log("$step: sending $name")
+            try {
+                action()
+            } catch (e: Exception) {
+                log("$step failed: ${e.javaClass.simpleName}: ${e.message}")
+            }
+            handler.postDelayed({
+                log("$step result: ${Sessions.nowPlaying(controller)}")
+                val playing = controller.playbackState?.state == PlaybackState.STATE_PLAYING
+                if (stopWhenPlaying && playing) {
+                    log("TIDAL is playing, stopping test H here")
                 } else {
-                    log("No link, skipping playFromUri")
+                    runAttempts(handler, controller, attempts, index + 1, stopWhenPlaying, log)
                 }
-                main.postDelayed({
-                    if (!isPlaying() && item != null) {
-                        controls.playFromUri(Uri.parse(item.schemeUrl), null)
-                        log("Not playing yet, sent playFromUri(${item.schemeUrl})")
-                    }
-                }, 4000)
-                main.postDelayed({
-                    if (!isPlaying()) {
-                        if (query.isNotBlank()) {
-                            controls.playFromSearch(query, null)
-                            log("Still not playing, sent playFromSearch(\"$query\")")
-                        } else {
-                            controls.play()
-                            log("Still not playing, sent play()")
-                        }
-                    }
-                }, 8000)
-                main.postDelayed({
-                    log("TIDAL reports playback state: ${stateName(controller.playbackState?.state)}")
-                }, 12000)
-            }
+            }, 5000)
+        }, 1000)
+    }
 
-            override fun onConnectionFailed() {
-                log("TIDAL refused the media service connection")
-            }
+    // ---------- Test I: guessed link formats that might make TIDAL start playing on its own ----------
 
-            override fun onConnectionSuspended() {
-                log("Media service connection dropped")
-            }
+    private fun linkVariants(context: Context, handler: Handler, item: Item, log: (String) -> Unit) {
+        val variants = listOf(
+            "https://tidal.com/browse/${item.type}/${item.id}?play=true",
+            "https://tidal.com/browse/${item.type}/${item.id}?autoplay=true",
+            "tidal://${item.type}/${item.id}/play",
+            "tidal://${item.type}/${item.id}?play=true",
+        )
+        variants.forEachIndexed { i, url ->
+            val step = "I${i + 1}"
+            handler.postDelayed({
+                log("$step: opening $url")
+                open(context, Uri.parse(url), log)
+            }, i * 9000L)
+            handler.postDelayed({
+                log("$step result: ${playingSummary(context)}")
+                pause(context, log)
+            }, i * 9000L + 7000L)
         }
-        val newBrowser = MediaBrowser(app, ComponentName(info.packageName, info.name), callback, null)
-        connecting = newBrowser
-        browser = newBrowser
-        try {
-            newBrowser.connect()
-        } catch (e: Exception) {
-            log("Connecting failed: ${e.javaClass.simpleName}: ${e.message}")
-        }
+        handler.postDelayed({ log("Test I finished") }, variants.size * 9000L)
     }
 
     private fun describeActions(actions: Long): String {
@@ -209,19 +281,8 @@ object Tidal {
             PlaybackState.ACTION_PLAY_FROM_URI to "playFromUri",
             PlaybackState.ACTION_PLAY_FROM_SEARCH to "playFromSearch",
             PlaybackState.ACTION_PLAY_FROM_MEDIA_ID to "playFromMediaId",
+            PlaybackState.ACTION_PREPARE_FROM_URI to "prepareFromUri",
         ).filter { (actions and it.first) != 0L }.map { it.second }
         return if (names.isEmpty()) "nothing reported" else names.joinToString()
-    }
-
-    private fun stateName(state: Int?): String = when (state) {
-        null -> "unknown"
-        PlaybackState.STATE_PLAYING -> "PLAYING"
-        PlaybackState.STATE_PAUSED -> "paused"
-        PlaybackState.STATE_STOPPED -> "stopped"
-        PlaybackState.STATE_BUFFERING -> "buffering"
-        PlaybackState.STATE_CONNECTING -> "connecting"
-        PlaybackState.STATE_ERROR -> "error"
-        PlaybackState.STATE_NONE -> "none"
-        else -> "state $state"
     }
 }

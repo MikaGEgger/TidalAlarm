@@ -5,6 +5,7 @@ import android.app.Activity
 import android.app.AlarmManager
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
@@ -16,9 +17,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.text.InputType
-import android.view.KeyEvent
 import android.widget.ArrayAdapter
-import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -35,7 +34,6 @@ class MainActivity : Activity() {
     private lateinit var linkInput: EditText
     private lateinit var queryInput: EditText
     private lateinit var strategyPicker: Spinner
-    private lateinit var desktopMode: CheckBox
     private lateinit var logView: TextView
     private val refresh: () -> Unit = { logView.text = TestLog.read(this) }
 
@@ -47,7 +45,7 @@ class MainActivity : Activity() {
             setPadding(pad, pad, pad, pad)
         }
 
-        root.heading("1 · Pick something to play")
+        root.heading("1 · Set up")
         statusView = root.note("")
         linkInput = EditText(this).apply {
             hint = "TIDAL link (or share a playlist/track from TIDAL to this app)"
@@ -56,44 +54,37 @@ class MainActivity : Activity() {
         }
         root.addView(linkInput)
         queryInput = EditText(this).apply {
-            hint = "Its name, as you'd search for it (only used by test D)"
+            hint = "Its name, as you'd search for it"
             inputType = InputType.TYPE_CLASS_TEXT
             setText(Prefs.query(this@MainActivity))
         }
         root.addView(queryInput)
+        root.button("Allow notification access (for test H)") { openNotificationAccess() }
+        root.note(
+            "If the switch is greyed out: open Settings → Apps → Alarm Test → ⋮ (top right) → " +
+                "Allow restricted settings, then try again."
+        )
 
         root.heading("2 · Test with the phone unlocked")
-        root.note("Each test asks TIDAL to start playing, then checks for 15 s whether music really comes out. Pause TIDAL between tests.")
+        root.note(
+            "Before EACH test: play something in Audible for a moment and pause it, so Audible is the last " +
+                "app that played. Before test H, also play a song in TIDAL that is NOT in your test playlist, then pause it."
+        )
         Strategy.values().forEach { strategy -> root.button(strategy.label) { runNow(strategy) } }
-        root.button("Pause TIDAL (like Snooze)") {
-            Tidal.mediaKey(this, KeyEvent.KEYCODE_MEDIA_PAUSE) { log(it) }
-        }
+        root.button("Pause TIDAL") { Tidal.pause(this) { log(it) } }
 
         root.heading("3 · Test with the phone locked")
-        root.note("Pick the test that worked best above, schedule the alarm, lock the phone and wait.")
+        root.note("Pick the test that played your playlist above, schedule the alarm, lock the phone and wait.")
         strategyPicker = Spinner(this).apply {
             adapter = ArrayAdapter(
                 this@MainActivity,
                 android.R.layout.simple_spinner_dropdown_item,
                 Strategy.values().map { it.label }
             )
-            setSelection(Strategy.LINK_PLUS_PLAY.ordinal)
+            setSelection(Strategy.LINK_PLUS_TIDAL_KEY.ordinal)
         }
         root.addView(strategyPicker)
         root.button("Schedule test alarm in 1 minute") { scheduleAlarm() }
-
-        root.heading("4 · TIDAL web player inside the app")
-        root.note("Log in, start the playlist yourself and listen for at least a minute. Does it stop after 30 s?")
-        desktopMode = CheckBox(this).apply { text = "Pretend to be a desktop browser" }
-        root.addView(desktopMode)
-        root.button("Open web player") {
-            saveInputs()
-            startActivity(
-                Intent(this, WebViewActivity::class.java)
-                    .putExtra(WebViewActivity.EXTRA_LINK, linkInput.text.toString())
-                    .putExtra(WebViewActivity.EXTRA_DESKTOP, desktopMode.isChecked)
-            )
-        }
 
         root.heading("Log")
         root.note("When you're done, tap Copy log and paste it into the chat with Claude.")
@@ -111,7 +102,7 @@ class MainActivity : Activity() {
 
         if (savedInstanceState == null) {
             log(
-                "Device: ${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE} " +
+                "Round 2. Device: ${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE} " +
                     "(API ${Build.VERSION.SDK_INT}), TIDAL app: ${Tidal.installedVersion(this) ?: "not installed"}"
             )
             handleShare(intent)
@@ -158,6 +149,7 @@ class MainActivity : Activity() {
         lines += if (tidal != null) "✓ TIDAL app installed ($tidal)" else "✗ TIDAL app not found"
         val item = Tidal.parse(linkInput.text.toString())
         lines += if (item != null) "✓ Link understood: ${item.type} ${item.id}" else "• No TIDAL link yet"
+        lines += if (Sessions.granted(this)) "✓ Notification access on" else "✗ Notification access off (needed for test H)"
         if (Build.VERSION.SDK_INT >= 33 &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) {
@@ -174,13 +166,31 @@ class MainActivity : Activity() {
         statusView.text = lines.joinToString("\n")
     }
 
+    private fun openNotificationAccess() {
+        val detail = if (Build.VERSION.SDK_INT >= 30) {
+            Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
+                .putExtra(Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME, Sessions.component(this).flattenToString())
+        } else {
+            null
+        }
+        try {
+            startActivity(detail ?: Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+        } catch (e: ActivityNotFoundException) {
+            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+        }
+        toast("Turn on notification access for Alarm Test")
+    }
+
     private fun runNow(strategy: Strategy) {
         saveInputs()
         updateStatus()
         handler.removeCallbacksAndMessages(null)
         log("=== ${strategy.label}, phone unlocked, media volume ${Tidal.mediaVolume(this)} ===")
-        Tidal.run(this, strategy, linkInput.text.toString(), queryInput.text.toString()) { log(it) }
-        Tidal.checkPlaybackLater(handler, this, { log(it) }, null)
+        log("Before: ${Tidal.playingSummary(this)}")
+        Tidal.run(this, handler, strategy, linkInput.text.toString(), queryInput.text.toString(), alarmMode = false) {
+            log(it)
+        }
+        if (!strategy.ownChecks) Tidal.checkPlaybackLater(handler, this, listOf(5, 10, 15), { log(it) }, null)
     }
 
     private fun scheduleAlarm() {

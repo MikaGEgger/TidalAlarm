@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission
         android:name="android.permission.SCHEDULE_EXACT_ALARM"
@@ -10,12 +9,9 @@
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <!-- Lets the app see the TIDAL app and its media service (Android 11+ package visibility). -->
+    <!-- Lets the app see the TIDAL app and its media button receiver (Android 11+ package visibility). -->
     <queries>
         <package android:name="com.aspiro.tidal" />
-        <intent>
-            <action android:name="android.media.browse.MediaBrowserService" />
-        </intent>
     </queries>
 
     <application
@@ -46,10 +42,16 @@
             android:launchMode="singleTask"
             android:taskAffinity="" />
 
-        <activity
-            android:name=".WebViewActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"
-            android:exported="false" />
+        <!-- Notification access: lets the test see and control TIDAL's media session (test H). -->
+        <service
+            android:name=".MediaAccessService"
+            android:exported="false"
+            android:label="Alarm Test"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
 
         <receiver
             android:name=".AlarmReceiver"
