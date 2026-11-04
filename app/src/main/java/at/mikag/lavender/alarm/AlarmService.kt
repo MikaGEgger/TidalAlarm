@@ -123,6 +123,8 @@ class AlarmService : Service() {
     private suspend fun playTidal(alarm: Alarm, item: TidalItem) {
         RingController.setSound(RingController.Sound.TIDAL_STARTING)
         goForeground(alarm, getString(R.string.ringing_starting_tidal))
+        // Something else already playing (a podcast left running overnight) would look like TIDAL started.
+        audio.stopOtherPlayback()
         audio.prepareMusic(alarm.volumePercent, alarm.rampSeconds)
 
         if (!waitForScreen(SCREEN_WAIT_MS)) {
@@ -137,6 +139,7 @@ class AlarmService : Service() {
 
         for ((index, link) in TidalLauncher.playLinks(item).withIndex()) {
             if (index > 0 && !waitForScreen(SCREEN_WAIT_MS)) break
+            RingController.launched.value = null
             RingController.launchRequest.value = link
             val opened = withTimeoutOrNull(4_000) { RingController.launched.first { it == link } } != null
             if (!opened) break

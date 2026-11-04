@@ -1,7 +1,6 @@
 package at.mikag.lavender.alarm
 
 import at.mikag.lavender.data.Alarm
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,14 +30,18 @@ object RingController {
      */
     val launchRequest = MutableStateFlow<String?>(null)
 
-    /** Links the screen actually opened. */
-    val launched = MutableSharedFlow<String>(extraBufferCapacity = 8)
+    /**
+     * The link the screen last opened. A StateFlow (not an event stream) on purpose: the screen may
+     * report it before the service starts waiting, and the report must not get lost.
+     */
+    val launched = MutableStateFlow<String?>(null)
 
     /** Whether the ringing screen is currently in front. */
     val screenVisible = MutableStateFlow(false)
 
     fun start(alarm: Alarm) {
         launchRequest.value = null
+        launched.value = null
         _state.value = Ringing(alarm, Sound.STARTING)
     }
 
@@ -48,6 +51,7 @@ object RingController {
 
     fun stop() {
         launchRequest.value = null
+        launched.value = null
         _state.value = null
     }
 

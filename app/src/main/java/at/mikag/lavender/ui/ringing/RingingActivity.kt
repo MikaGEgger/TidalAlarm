@@ -96,7 +96,7 @@ class RingingActivity : ComponentActivity() {
                 try {
                     RingController.launchRequest.filterNotNull().collect { link ->
                         RingController.launchRequest.value = null
-                        if (TidalLauncher.open(this@RingingActivity, link)) RingController.launched.tryEmit(link)
+                        if (TidalLauncher.open(this@RingingActivity, link)) RingController.launched.value = link
                     }
                 } finally {
                     RingController.screenVisible.value = false
