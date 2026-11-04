@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="alarm_default_label">Wecker</string>
+
+    <!-- Aktionen -->
+    <string name="action_add_alarm">Wecker hinzufügen</string>
+    <string name="action_back">Zurück</string>
+    <string name="action_cancel">Abbrechen</string>
+    <string name="action_clear">Entfernen</string>
+    <string name="action_delete">Löschen</string>
+    <string name="action_dismiss">Beenden</string>
+    <string name="action_dismiss_now">Jetzt beenden</string>
+    <string name="action_login_tidal">Mit TIDAL anmelden</string>
+    <string name="action_logout">Abmelden</string>
+    <string name="action_more">Weitere Optionen</string>
+    <string name="action_ok">OK</string>
+    <string name="action_retry">Nochmal versuchen</string>
+    <string name="action_skip_next">Nächsten Wecker überspringen</string>
+    <string name="action_undo_skip">Nicht überspringen</string>
+    <string name="action_snooze">Schlummern</string>
+    <string name="action_test_alarm">Diesen Wecker jetzt testen</string>
+    <string name="action_undo">Rückgängig</string>
+    <string name="action_use">Verwenden</string>
+
+    <!-- Benachrichtigungskanäle -->
+    <string name="channel_ringing">Klingelnde Wecker</string>
+    <string name="channel_upcoming">Anstehende Wecker</string>
+    <string name="channel_snoozed">Schlummernde Wecker</string>
+    <string name="channel_missed">Verpasste Wecker</string>
+
+    <!-- Benachrichtigungen -->
+    <string name="notification_upcoming_title">Anstehender Wecker</string>
+    <string name="notification_snoozed_title">Schlummern bis %1$s</string>
+    <string name="notification_missed_title">Verpasster Wecker um %1$s</string>
+    <string name="notification_silenced_title">Wecker um %1$s hat unbeantwortet aufgehört zu klingeln</string>
+
+    <!-- Dauer -->
+    <string name="duration_less_than_minute">weniger als einer Minute</string>
+    <string name="duration_minutes">%1$d Min.</string>
+    <string name="duration_hours_minutes">%1$d Std. %2$d Min.</string>
+    <string name="duration_days_hours">%1$d T. %2$d Std.</string>
+    <string name="minutes">%1$d Min.</string>
+    <string name="seconds">%1$d Sek.</string>
+
+    <!-- Wiederholung -->
+    <string name="repeat_every_day">Jeden Tag</string>
+    <string name="repeat_weekdays">Werktags</string>
+    <string name="repeat_weekend">Am Wochenende</string>
+    <string name="repeat_once">Einmalig</string>
+    <string name="repeat_today">Heute</string>
+    <string name="repeat_tomorrow">Morgen</string>
+
+    <!-- Weckerliste -->
+    <string name="empty_title">Noch keine Wecker</string>
+    <string name="empty_text">Tippe auf +, um mit deiner Musik aufzuwachen.</string>
+    <string name="message_alarm_in">Wecker in %1$s</string>
+    <string name="message_alarm_deleted">Wecker gelöscht</string>
+    <string name="status_snoozed_until">Schlummert bis %1$s</string>
+    <string name="status_skipping">Übersprungen: %1$s</string>
+    <string name="reliability_banner_title">Wecker klingeln vielleicht nicht</string>
+    <string name="reliability_banner_text">Eine Berechtigung fehlt. Tippe, um das zu beheben.</string>
+
+    <!-- Bearbeiten -->
+    <string name="editor_title">Wecker</string>
+    <string name="editor_off">Aus</string>
+    <string name="editor_rings_in">Klingelt in %1$s</string>
+    <string name="editor_repeat">Wiederholen</string>
+    <string name="editor_date">Datum</string>
+    <string name="editor_date_next">Wenn die Uhr diese Zeit das nächste Mal zeigt</string>
+    <string name="editor_label">Bezeichnung</string>
+    <string name="editor_sound">Ton</string>
+    <string name="editor_music">TIDAL-Musik</string>
+    <string name="editor_music_none">Keine. Tippe, um eine Playlist oder einen Titel zu wählen.</string>
+    <string name="editor_tidal_missing">Die TIDAL-App ist nicht installiert: Es klingelt der Ersatzton.</string>
+    <string name="editor_backup_sound">Ersatzton</string>
+    <string name="editor_alarm_sound">Weckton</string>
+    <string name="editor_sound_explainer">Das Lavender-Klingeln funktioniert immer, auch direkt nach einem Neustart. Ein Ton vom Handy ist vor dem ersten Entsperren eventuell nicht verfügbar; dann klingelt stattdessen Lavender.</string>
+    <string name="editor_sound_phone">Vom Handy wählen</string>
+    <string name="editor_volume">Lautstärke: %1$d %%</string>
+    <string name="editor_ramp">Langsam lauter werden</string>
+    <string name="editor_vibrate">Vibrieren</string>
+    <string name="editor_snooze">Schlummerdauer</string>
+    <string name="editor_test_hint">Tipp: Das Glocken-Symbol oben lässt diesen Wecker sofort klingeln, so kannst du prüfen, ob deine Musik startet. Ein Test ändert den Wecker nicht.</string>
+    <string name="ramp_off">Aus</string>
+    <string name="sound_lavender_chime">Lavender-Klingeln</string>
+
+    <!-- TIDAL-Auswahl -->
+    <string name="picker_title">TIDAL-Musik</string>
+    <string name="picker_install_tidal">Lavender spielt deine Musik über die TIDAL-App. Installiere sie und melde dich auch dort an.</string>
+    <string name="picker_not_configured">Die TIDAL-Anmeldung ist in dieser Lavender-Version nicht eingerichtet. Du kannst trotzdem einen Link einfügen.</string>
+    <string name="picker_paste_link">TIDAL-Link einfügen</string>
+    <string name="picker_link_invalid">Das sieht nicht nach einem Link zu einer TIDAL-Playlist oder einem Titel aus.</string>
+    <string name="picker_generic_playlist">TIDAL-Playlist</string>
+    <string name="picker_generic_track">TIDAL-Titel</string>
+    <string name="picker_login_title">Aus deiner Sammlung wählen</string>
+    <string name="picker_login_text">Melde dich einmal an, um deine Playlists und Lieblingstitel zu sehen. Lavender liest sie nur und ändert nie etwas an deinem TIDAL-Konto.</string>
+    <string name="picker_tab_playlists">Playlists</string>
+    <string name="picker_tab_tracks">Titel</string>
+    <string name="picker_filter">Filtern</string>
+    <string name="picker_tracks_count">%1$d Titel</string>
+    <string name="picker_load_more">Mehr laden</string>
+    <string name="picker_empty_playlists">Keine Playlists in deiner Sammlung.</string>
+    <string name="picker_empty_tracks">Noch keine Lieblingstitel.</string>
+    <string name="picker_error_login">Deine TIDAL-Anmeldung ist abgelaufen. Bitte melde dich neu an.</string>
+    <string name="picker_error_forbidden">TIDAL hat den Zugriff verweigert. Prüfe im TIDAL-Entwicklerportal, ob die App die Berechtigungen (Scopes) user.read, collection.read und playlists.read hat.</string>
+    <string name="picker_error_network">Keine Verbindung zu TIDAL.</string>
+    <string name="picker_error_generic">Laden von TIDAL hat nicht geklappt.</string>
+    <string name="login_success">Bei TIDAL angemeldet</string>
+    <string name="login_failed">TIDAL-Anmeldung fehlgeschlagen: %1$s</string>
+
+    <!-- Klingeln -->
+    <string name="ringing_starting_tidal">TIDAL startet …</string>
+    <string name="ringing_tidal_failed">TIDAL ist nicht gestartet, darum klingelt der Ersatzton.</string>
+    <string name="ringing_backup">Weckton läuft</string>
+    <string name="ringing_snooze">Schlummern · %1$d Min.</string>
+
+    <!-- Einstellungen -->
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_theme">Design</string>
+    <string name="dark_mode_dark">Dunkel</string>
+    <string name="dark_mode_light">Hell</string>
+    <string name="dark_mode_system">Wie das System</string>
+    <string name="settings_alarms">Wecker</string>
+    <string name="settings_default_snooze">Schlummerdauer für neue Wecker</string>
+    <string name="settings_silence_after">Klingeln beenden nach</string>
+    <string name="silence_never">Nie</string>
+    <string name="settings_volume_buttons">Lautstärketasten beim Klingeln</string>
+    <string name="volume_buttons_volume">Lautstärke ändern</string>
+    <string name="volume_buttons_snooze">Schlummern</string>
+    <string name="volume_buttons_dismiss">Beenden</string>
+    <string name="settings_week_start">Woche beginnt am</string>
+    <string name="week_start_system">Wie das System</string>
+    <string name="settings_language">Sprache</string>
+    <string name="settings_tidal">TIDAL</string>
+    <string name="settings_tidal_installed">TIDAL-App installiert</string>
+    <string name="settings_tidal_missing">TIDAL-App nicht installiert</string>
+    <string name="settings_tidal_app_text">Die Musik läuft in der TIDAL-App, mit deinem TIDAL-Abo.</string>
+    <string name="settings_tidal_logged_in">Bei TIDAL angemeldet</string>
+    <string name="settings_tidal_logged_out">Nicht bei TIDAL angemeldet</string>
+    <string name="settings_reliability">Zuverlässigkeit</string>
+    <string name="reliability_notifications">Benachrichtigungen</string>
+    <string name="reliability_notifications_text">Nötig zum Klingeln und für Schlummern/Beenden.</string>
+    <string name="reliability_full_screen">Vollbild-Wecker</string>
+    <string name="reliability_full_screen_text">Nötig, damit der Wecker über dem Sperrbildschirm erscheint.</string>
+    <string name="reliability_exact">Wecker &amp; Erinnerungen</string>
+    <string name="reliability_exact_text">Nötig, um auf die Minute genau zu klingeln.</string>
+    <string name="reliability_battery">Akku: nicht eingeschränkt</string>
+    <string name="reliability_battery_text">Empfohlen. Manche Handys stoppen Apps im Hintergrund; öffne App-Info → Akku → Nicht eingeschränkt.</string>
+    <string name="reliability_phone_tips">Tipps für %1$s-Handys</string>
+    <string name="reliability_phone_tips_text">Manche Hersteller haben zusätzliche Akkusparer, die Wecker stoppen können. Öffnet dontkillmyapp.com.</string>
+    <string name="settings_about">Über</string>
+    <string name="settings_about_text">Deine Wecker bleiben auf diesem Handy. Lavender ist nicht von TIDAL und nicht mit TIDAL verbunden; es nutzt die TIDAL-App und die offizielle TIDAL-Anmeldung.</string>
+</resources>

@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Lavender</string>
+    <string name="alarm_default_label">Alarm</string>
+
+    <!-- Actions -->
+    <string name="action_add_alarm">Add alarm</string>
+    <string name="action_back">Back</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_clear">Remove</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_dismiss">Dismiss</string>
+    <string name="action_dismiss_now">Dismiss now</string>
+    <string name="action_login_tidal">Log in with TIDAL</string>
+    <string name="action_logout">Log out</string>
+    <string name="action_more">More options</string>
+    <string name="action_ok">OK</string>
+    <string name="action_retry">Try again</string>
+    <string name="action_skip_next">Skip next alarm</string>
+    <string name="action_undo_skip">Don\'t skip</string>
+    <string name="action_snooze">Snooze</string>
+    <string name="action_test_alarm">Test this alarm now</string>
+    <string name="action_undo">Undo</string>
+    <string name="action_use">Use</string>
+
+    <!-- Notification channels -->
+    <string name="channel_ringing">Ringing alarms</string>
+    <string name="channel_upcoming">Upcoming alarms</string>
+    <string name="channel_snoozed">Snoozed alarms</string>
+    <string name="channel_missed">Missed alarms</string>
+
+    <!-- Notifications -->
+    <string name="notification_upcoming_title">Upcoming alarm</string>
+    <string name="notification_snoozed_title">Snoozed until %1$s</string>
+    <string name="notification_missed_title">Missed alarm at %1$s</string>
+    <string name="notification_silenced_title">Alarm at %1$s stopped after ringing unanswered</string>
+
+    <!-- Durations -->
+    <string name="duration_less_than_minute">less than a minute</string>
+    <string name="duration_minutes">%1$d min</string>
+    <string name="duration_hours_minutes">%1$d h %2$d min</string>
+    <string name="duration_days_hours">%1$d d %2$d h</string>
+    <string name="minutes">%1$d min</string>
+    <string name="seconds">%1$d s</string>
+
+    <!-- Repeat -->
+    <string name="repeat_every_day">Every day</string>
+    <string name="repeat_weekdays">Weekdays</string>
+    <string name="repeat_weekend">Weekends</string>
+    <string name="repeat_once">Once</string>
+    <string name="repeat_today">Today</string>
+    <string name="repeat_tomorrow">Tomorrow</string>
+
+    <!-- Alarm list -->
+    <string name="empty_title">No alarms yet</string>
+    <string name="empty_text">Tap + to wake up to your music.</string>
+    <string name="message_alarm_in">Alarm in %1$s</string>
+    <string name="message_alarm_deleted">Alarm deleted</string>
+    <string name="status_snoozed_until">Snoozed until %1$s</string>
+    <string name="status_skipping">Skipping %1$s</string>
+    <string name="reliability_banner_title">Alarms might not ring</string>
+    <string name="reliability_banner_text">A permission is missing. Tap to fix it.</string>
+
+    <!-- Editor -->
+    <string name="editor_title">Alarm</string>
+    <string name="editor_off">Off</string>
+    <string name="editor_rings_in">Rings in %1$s</string>
+    <string name="editor_repeat">Repeat</string>
+    <string name="editor_date">Date</string>
+    <string name="editor_date_next">Next time the clock shows this time</string>
+    <string name="editor_label">Label</string>
+    <string name="editor_sound">Sound</string>
+    <string name="editor_music">TIDAL music</string>
+    <string name="editor_music_none">None. Tap to pick a playlist or track.</string>
+    <string name="editor_tidal_missing">The TIDAL app isn\'t installed: the backup sound will ring.</string>
+    <string name="editor_backup_sound">Backup sound</string>
+    <string name="editor_alarm_sound">Alarm sound</string>
+    <string name="editor_sound_explainer">Lavender\'s chime always works, even right after a restart. A sound from your phone may not be available before you first unlock it; then the chime plays instead.</string>
+    <string name="editor_sound_phone">Choose from phone</string>
+    <string name="editor_volume">Volume: %1$d %%</string>
+    <string name="editor_ramp">Gradually louder</string>
+    <string name="editor_vibrate">Vibrate</string>
+    <string name="editor_snooze">Snooze length</string>
+    <string name="editor_test_hint">Tip: the bell icon at the top rings this alarm right away, so you can check that your music starts. A test doesn\'t change the alarm.</string>
+    <string name="ramp_off">Off</string>
+    <string name="sound_lavender_chime">Lavender chime</string>
+
+    <!-- TIDAL picker -->
+    <string name="picker_title">TIDAL music</string>
+    <string name="picker_install_tidal">Lavender plays your music through the TIDAL app. Install it and log in there, too.</string>
+    <string name="picker_not_configured">TIDAL login isn\'t set up in this version of Lavender. You can still paste a link.</string>
+    <string name="picker_paste_link">Paste a TIDAL link</string>
+    <string name="picker_link_invalid">That doesn\'t look like a TIDAL playlist or track link.</string>
+    <string name="picker_generic_playlist">TIDAL playlist</string>
+    <string name="picker_generic_track">TIDAL track</string>
+    <string name="picker_login_title">Pick from your library</string>
+    <string name="picker_login_text">Log in once to see your playlists and favorite tracks. Lavender only reads them; it never changes anything in your TIDAL account.</string>
+    <string name="picker_tab_playlists">Playlists</string>
+    <string name="picker_tab_tracks">Tracks</string>
+    <string name="picker_filter">Filter</string>
+    <string name="picker_tracks_count">%1$d tracks</string>
+    <string name="picker_load_more">Load more</string>
+    <string name="picker_empty_playlists">No playlists in your collection.</string>
+    <string name="picker_empty_tracks">No favorite tracks yet.</string>
+    <string name="picker_error_login">Your TIDAL login has expired. Please log in again.</string>
+    <string name="picker_error_forbidden">TIDAL refused access. Check that the app has the permissions (scopes) user.read, collection.read and playlists.read in the TIDAL developer dashboard.</string>
+    <string name="picker_error_network">No connection to TIDAL.</string>
+    <string name="picker_error_generic">Couldn\'t load from TIDAL.</string>
+    <string name="login_success">Logged in to TIDAL</string>
+    <string name="login_failed">TIDAL login failed: %1$s</string>
+
+    <!-- Ringing -->
+    <string name="ringing_starting_tidal">Starting TIDAL …</string>
+    <string name="ringing_tidal_failed">TIDAL didn\'t start, so the backup sound is playing.</string>
+    <string name="ringing_backup">Playing the alarm sound</string>
+    <string name="ringing_snooze">Snooze · %1$d min</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_theme">Theme</string>
+    <string name="dark_mode_dark">Dark</string>
+    <string name="dark_mode_light">Light</string>
+    <string name="dark_mode_system">Like the system</string>
+    <string name="settings_alarms">Alarms</string>
+    <string name="settings_default_snooze">Snooze length for new alarms</string>
+    <string name="settings_silence_after">Stop ringing after</string>
+    <string name="silence_never">Never</string>
+    <string name="settings_volume_buttons">Volume buttons while ringing</string>
+    <string name="volume_buttons_volume">Change volume</string>
+    <string name="volume_buttons_snooze">Snooze</string>
+    <string name="volume_buttons_dismiss">Dismiss</string>
+    <string name="settings_week_start">Week starts on</string>
+    <string name="week_start_system">Like the system</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_tidal">TIDAL</string>
+    <string name="settings_tidal_installed">TIDAL app installed</string>
+    <string name="settings_tidal_missing">TIDAL app not installed</string>
+    <string name="settings_tidal_app_text">The music plays in the TIDAL app, with your TIDAL subscription.</string>
+    <string name="settings_tidal_logged_in">Logged in to TIDAL</string>
+    <string name="settings_tidal_logged_out">Not logged in to TIDAL</string>
+    <string name="settings_reliability">Reliability</string>
+    <string name="reliability_notifications">Notifications</string>
+    <string name="reliability_notifications_text">Needed to ring and show Snooze/Dismiss.</string>
+    <string name="reliability_full_screen">Full-screen alarms</string>
+    <string name="reliability_full_screen_text">Needed to show the alarm over the lock screen.</string>
+    <string name="reliability_exact">Alarms &amp; reminders</string>
+    <string name="reliability_exact_text">Needed to ring on the minute.</string>
+    <string name="reliability_battery">Battery: unrestricted</string>
+    <string name="reliability_battery_text">Recommended. Some phones stop apps in the background; open App info → Battery → Unrestricted.</string>
+    <string name="reliability_phone_tips">Tips for %1$s phones</string>
+    <string name="reliability_phone_tips_text">Some phone makers have extra battery savers that can stop alarms. Opens dontkillmyapp.com.</string>
+    <string name="settings_about">About</string>
+    <string name="settings_about_text">Your alarms stay on this phone. Lavender isn\'t made by or affiliated with TIDAL; it uses the TIDAL app and the official TIDAL login.</string>
+</resources>
