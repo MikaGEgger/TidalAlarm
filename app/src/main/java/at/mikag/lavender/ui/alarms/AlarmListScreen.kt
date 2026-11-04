@@ -1,8 +1,12 @@
 package at.mikag.lavender.ui.alarms
 
 import android.app.Application
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -21,6 +25,7 @@ import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Snooze
 import androidx.compose.material.icons.filled.WarningAmber
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -36,6 +41,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -43,10 +49,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -66,6 +74,9 @@ import at.mikag.lavender.data.AppSettings
 import at.mikag.lavender.ui.Format
 import at.mikag.lavender.ui.Reliability
 import at.mikag.lavender.ui.components.FlagStripe
+import at.mikag.lavender.ui.components.FlagSwatch
+import at.mikag.lavender.ui.components.flagWash
+import at.mikag.lavender.ui.theme.LocalPalette
 import at.mikag.lavender.ui.components.TimePickerDialog
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -129,6 +140,7 @@ fun AlarmListScreen(onOpenAlarm: (Long) -> Unit, onOpenSettings: () -> Unit) {
     var showTimePicker by remember { mutableStateOf(false) }
     var reliability by remember { mutableStateOf(Reliability.check(context)) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { reliability = Reliability.check(context) }
+    var permissionPromptDismissed by rememberSaveable { mutableStateOf(false) }
 
     val undoLabel = stringResource(R.string.action_undo)
     val deletedText = stringResource(R.string.message_alarm_deleted)
@@ -148,17 +160,18 @@ fun AlarmListScreen(onOpenAlarm: (Long) -> Unit, onOpenSettings: () -> Unit) {
 
     Scaffold(
         topBar = {
-            Column {
+            val stripes = LocalPalette.current.stripes
+            Column(Modifier.background(MaterialTheme.colorScheme.background).background(flagWash(stripes, 0.38f))) {
                 TopAppBar(
-                    title = { Text(stringResource(R.string.app_name), fontWeight = FontWeight.SemiBold) },
+                    title = { Text(stringResource(R.string.app_name), fontWeight = FontWeight.Bold) },
                     actions = {
                         IconButton(onClick = onOpenSettings) {
                             Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings_title))
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 )
-                FlagStripe()
+                FlagStripe(height = 8.dp)
             }
         },
         floatingActionButton = {
@@ -197,6 +210,10 @@ fun AlarmListScreen(onOpenAlarm: (Long) -> Unit, onOpenSettings: () -> Unit) {
         }
     }
 
+    if (!reliability.critical && !permissionPromptDismissed) {
+        PermissionPrompt(reliability, onDismiss = { permissionPromptDismissed = true })
+    }
+
     if (showTimePicker) {
         val now = java.time.LocalTime.now()
         TimePickerDialog(
@@ -209,6 +226,34 @@ fun AlarmListScreen(onOpenAlarm: (Long) -> Unit, onOpenSettings: () -> Unit) {
             onDismiss = { showTimePicker = false },
         )
     }
+}
+
+/** Missing permissions mean silent alarms, so ask clearly instead of only showing a banner. */
+@Composable
+private fun PermissionPrompt(status: Reliability.Status, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val missing = buildList {
+        if (!status.notifications) add(stringResource(R.string.reliability_notifications))
+        if (!status.fullScreen) add(stringResource(R.string.reliability_full_screen))
+        if (!status.exactAlarms) add(stringResource(R.string.reliability_exact))
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.permission_prompt_title)) },
+        text = {
+            Text(stringResource(R.string.permission_prompt_text, missing.joinToString(", ")))
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                when {
+                    !status.notifications -> Reliability.openNotificationSettings(context)
+                    !status.fullScreen -> Reliability.openFullScreenSettings(context)
+                    else -> Reliability.openExactAlarmSettings(context)
+                }
+            }) { Text(stringResource(R.string.action_allow)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_later)) } },
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -267,18 +312,23 @@ private fun AlarmCard(
     val context = LocalContext.current
     var menu by remember { mutableStateOf(false) }
     val active = alarm.enabled
+    val stripes = LocalPalette.current.stripes
     Card(
         onClick = onClick,
         colors = CardDefaults.cardColors(
-            containerColor = if (active) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainerLow
+            containerColor = if (active) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainerLow
         ),
     ) {
-        Row(Modifier.padding(start = 20.dp, end = 8.dp, top = 12.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+      Row(Modifier.height(IntrinsicSize.Min)) {
+        // The theme's flag as a colour edge on switched-on alarms.
+        if (active) FlagSwatch(stripes, Modifier.width(8.dp).fillMaxHeight())
+        Row(Modifier.weight(1f).padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f).alpha(if (active) 1f else 0.55f)) {
                 Text(
                     Format.time(context, alarm.hour, alarm.minute),
-                    fontSize = 44.sp,
-                    fontWeight = FontWeight.Light,
+                    fontSize = 46.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                 )
                 val summary = buildList {
                     if (alarm.label.isNotBlank()) add(alarm.label)
@@ -340,5 +390,6 @@ private fun AlarmCard(
                 }
             }
         }
+      }
     }
 }

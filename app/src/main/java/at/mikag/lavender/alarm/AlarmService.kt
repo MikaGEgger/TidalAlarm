@@ -1,5 +1,7 @@
 package at.mikag.lavender.alarm
 
+import android.app.KeyguardManager
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -8,8 +10,10 @@ import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import android.os.UserManager
+import at.mikag.lavender.AppLog
 import at.mikag.lavender.R
 import at.mikag.lavender.container
+import at.mikag.lavender.ui.ringing.RingingActivity
 import at.mikag.lavender.data.Alarm
 import at.mikag.lavender.data.TidalItem
 import at.mikag.lavender.tidal.TidalLauncher
@@ -56,6 +60,7 @@ class AlarmService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        AppLog.i(TAG, "Command ${intent?.action?.substringAfterLast('.')} (ringing=${current?.id})")
         when (intent?.action) {
             ACTION_FIRE -> {
                 // Android requires this within seconds of startForegroundService(), so do it before anything else.
@@ -97,6 +102,7 @@ class AlarmService : Service() {
                 }
             }
             goForeground(alarm, null)
+            logRingContext(alarm)
             if (alarm.vibrate) vibration = AlarmVibration(this@AlarmService).also { it.start() }
 
             val silenceAfter = withContext(Dispatchers.IO) { container.settings.current().silenceAfterMinutes }
@@ -116,6 +122,35 @@ class AlarmService : Service() {
         }
     }
 
+    /**
+     * Everything that decides whether the ringing screen can appear. If full-screen alarms aren't allowed,
+     * also try opening the screen directly (Android may block that, but it costs nothing to try).
+     */
+    private fun logRingContext(alarm: Alarm) {
+        val notifications = getSystemService(NotificationManager::class.java)
+        val fullScreen = Build.VERSION.SDK_INT < 34 || notifications.canUseFullScreenIntent()
+        val enabled = notifications.areNotificationsEnabled()
+        val channel = notifications.getNotificationChannel(Notifications.CHANNEL_RINGING)
+        AppLog.i(
+            TAG,
+            "Ringing #${alarm.id} at ${alarm.hour}:${"%02d".format(alarm.minute)} test=$testRun" +
+                " | notifications=$enabled fullScreenAllowed=$fullScreen channelImportance=${channel?.importance}" +
+                " | screenOn=${getSystemService(PowerManager::class.java).isInteractive}" +
+                " locked=${getSystemService(KeyguardManager::class.java).isKeyguardLocked}" +
+                " userUnlocked=${getSystemService(UserManager::class.java).isUserUnlocked}" +
+                " | tidalInstalled=${TidalLauncher.isInstalled(this)} music=${alarm.tidalItem?.let { "${it.type.path}/${it.id}" }}" +
+                " volume=${alarm.volumePercent}% ramp=${alarm.rampSeconds}s",
+        )
+        if (!fullScreen || !enabled) {
+            AppLog.w(TAG, "Full-screen alarm not possible (permission missing): trying to open the ringing screen directly")
+            try {
+                startActivity(Intent(this, RingingActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            } catch (e: RuntimeException) {
+                AppLog.w(TAG, "Opening the ringing screen directly failed", e)
+            }
+        }
+    }
+
     /** Not before the first unlock after a reboot (TIDAL can't run then), and only if TIDAL is installed. */
     private fun tidalUsable(): Boolean =
         getSystemService(UserManager::class.java).isUserUnlocked && TidalLauncher.isInstalled(this)
@@ -130,8 +165,10 @@ class AlarmService : Service() {
         if (!waitForScreen(SCREEN_WAIT_MS)) {
             // The phone is in use: Android shows a pop-up notification instead of the ringing screen,
             // and only a visible screen may open TIDAL. Ring with the backup sound until the user opens it.
+            AppLog.w(TAG, "Ringing screen didn't appear within ${SCREEN_WAIT_MS / 1000} s: backup sound until it's opened")
             playBackup(alarm, tidalFailed = false)
             waitForScreen(Long.MAX_VALUE)
+            AppLog.i(TAG, "Ringing screen opened: switching from backup sound to TIDAL")
             backup.stop()
             playTidal(alarm, item)
             return
@@ -141,8 +178,13 @@ class AlarmService : Service() {
             if (index > 0 && !waitForScreen(SCREEN_WAIT_MS)) break
             RingController.launched.value = null
             RingController.launchRequest.value = link
+            AppLog.i(TAG, "Asking the ringing screen to open link ${index + 1}: $link")
             val opened = withTimeoutOrNull(4_000) { RingController.launched.first { it == link } } != null
-            if (!opened) break
+            if (!opened) {
+                AppLog.w(TAG, "Link ${index + 1} wasn't opened within 4 s")
+                break
+            }
+            val openedAt = System.currentTimeMillis()
 
             val playing = coroutineScope {
                 // TIDAL is now in front of the ringing screen; bring Snooze/Dismiss back on top.
@@ -152,6 +194,7 @@ class AlarmService : Service() {
                 }
                 audio.waitForMusic(if (index == 0) FIRST_LINK_WAIT_MS else NEXT_LINK_WAIT_MS)
             }
+            AppLog.i(TAG, if (playing) "Music detected ${System.currentTimeMillis() - openedAt} ms after opening link ${index + 1}" else "No music after link ${index + 1}")
             if (playing) {
                 RingController.setSound(RingController.Sound.TIDAL)
                 goForeground(alarm, item.title)
@@ -161,6 +204,7 @@ class AlarmService : Service() {
                     ramp.cancel()
                 }
                 // TIDAL stopped playing (network gone, app closed, paused …): keep waking the user.
+                AppLog.w(TAG, "Music stopped for ${TIDAL_SILENCE_LIMIT_MS / 1000} s while ringing: backup sound")
                 playBackup(alarm, tidalFailed = true)
                 return
             }
@@ -187,6 +231,7 @@ class AlarmService : Service() {
     }
 
     private fun playBackup(alarm: Alarm, tidalFailed: Boolean) {
+        AppLog.i(TAG, "Backup sound (tidalFailed=$tidalFailed, ringtone=${alarm.ringtoneTitle ?: "Lavender chime"})")
         RingController.setSound(RingController.Sound.BACKUP, tidalFailed)
         goForeground(alarm, alarm.ringtoneTitle ?: getString(R.string.sound_lavender_chime))
         audio.prepareAlarmStream(alarm.volumePercent)
@@ -201,6 +246,7 @@ class AlarmService : Service() {
         }
         if (finishing) return
         finishing = true
+        AppLog.i(TAG, "Finishing #${alarm.id}: $outcome (rang ${(System.currentTimeMillis() - startedAt) / 1000} s)")
         val job = ringJob
         ringJob = null
         scope.launch {
@@ -250,6 +296,7 @@ class AlarmService : Service() {
             }
         } catch (e: RuntimeException) {
             // systemExempted needs the exact-alarm permission; media playback is the fallback type.
+            AppLog.w(TAG, "startForeground(systemExempted) failed, using mediaPlayback", e)
             if (Build.VERSION.SDK_INT >= 29) {
                 startForeground(Notifications.ID_RINGING, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
             } else {
@@ -291,6 +338,7 @@ class AlarmService : Service() {
         const val ACTION_SNOOZE = "at.mikag.lavender.service.SNOOZE"
         const val ACTION_DISMISS = "at.mikag.lavender.service.DISMISS"
         private const val EXTRA_TEST = "test"
+        private const val TAG = "Ring"
 
         private const val SCREEN_WAIT_MS = 5_000L
         private const val RESHOW_DELAY_MS = 5_000L

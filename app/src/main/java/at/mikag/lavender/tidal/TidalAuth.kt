@@ -5,6 +5,7 @@ import android.net.Uri
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import at.mikag.lavender.AppLog
 import at.mikag.lavender.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -79,6 +80,7 @@ class TidalAuth(context: Context, private val http: OkHttpClient) {
     /** Handles tidalarm://auth?code=…&state=… after the user logged in. */
     suspend fun handleRedirect(uri: Uri) {
         uri.getQueryParameter("error")?.let { error ->
+            AppLog.w("Tidal", "Login returned error=$error ${uri.getQueryParameter("error_description").orEmpty()}")
             throw AuthException(uri.getQueryParameter("error_description") ?: error)
         }
         val code = uri.getQueryParameter("code") ?: throw AuthException("No login code received")
@@ -95,7 +97,13 @@ class TidalAuth(context: Context, private val http: OkHttpClient) {
             .add("code_verifier", verifier)
             .add("scope", SCOPES)
             .build()
-        val response = tokenRequest(body)
+        val response = try {
+            tokenRequest(body)
+        } catch (e: Exception) {
+            AppLog.w("Tidal", "Login: code exchange failed", e)
+            throw e
+        }
+        AppLog.i("Tidal", "Login ok (token valid for ${response.expiresIn} s)")
         prefs.edit().remove(KEY_VERIFIER).remove(KEY_STATE).apply()
         saveTokens(Tokens(response.accessToken, response.refreshToken, expiry(response), response.userId?.toString()))
         _loggedIn.value = true
@@ -122,6 +130,7 @@ class TidalAuth(context: Context, private val http: OkHttpClient) {
             updated.access
         } catch (e: AuthException) {
             // The refresh token was rejected: the user has to log in again.
+            AppLog.w("Tidal", "Token refresh rejected: logged out", e)
             logout()
             null
         }

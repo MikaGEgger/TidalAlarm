@@ -25,6 +25,7 @@ import at.mikag.lavender.data.AppSettings
 import at.mikag.lavender.ui.alarms.AlarmListScreen
 import at.mikag.lavender.ui.editor.AlarmEditorScreen
 import at.mikag.lavender.ui.picker.TidalPickerScreen
+import at.mikag.lavender.ui.settings.LogScreen
 import at.mikag.lavender.ui.settings.SettingsScreen
 import at.mikag.lavender.ui.theme.LavenderTheme
 import at.mikag.lavender.ui.theme.isDark
@@ -40,6 +41,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val settings by container.settings.settings.collectAsStateWithLifecycle(initialValue = AppSettings())
             val dark = isDark(settings.darkMode)
+            Format.timeFormat = settings.timeFormat
             LaunchedEffect(dark) {
                 val style = if (dark) SystemBarStyle.dark(Color.TRANSPARENT) else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
                 enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
@@ -82,7 +84,10 @@ private fun LavenderNavigation() {
             TidalPickerScreen(alarmId = id, onDone = { nav.popBackStack() })
         }
         composable("settings") {
-            SettingsScreen(onBack = { nav.popBackStack() })
+            SettingsScreen(onBack = { nav.popBackStack() }, onOpenLog = { nav.navigate("log") })
+        }
+        composable("log") {
+            LogScreen(onBack = { nav.popBackStack() })
         }
     }
 }

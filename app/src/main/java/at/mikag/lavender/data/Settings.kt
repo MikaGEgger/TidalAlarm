@@ -20,6 +20,8 @@ enum class VolumeButtons { VOLUME, SNOOZE, DISMISS }
 
 enum class WeekStart { SYSTEM, MONDAY, SUNDAY, SATURDAY }
 
+enum class TimeFormat { H24, H12, SYSTEM }
+
 data class AppSettings(
     val theme: ThemeChoice = ThemeChoice.LAVENDER,
     val darkMode: DarkMode = DarkMode.DARK,
@@ -28,6 +30,7 @@ data class AppSettings(
     val silenceAfterMinutes: Int = 10,
     val volumeButtons: VolumeButtons = VolumeButtons.VOLUME,
     val weekStart: WeekStart = WeekStart.SYSTEM,
+    val timeFormat: TimeFormat = TimeFormat.H24,
 )
 
 class SettingsRepository(context: Context) {
@@ -44,6 +47,7 @@ class SettingsRepository(context: Context) {
             silenceAfterMinutes = prefs[SILENCE] ?: 10,
             volumeButtons = prefs[VOLUME_BUTTONS].toEnum(VolumeButtons.VOLUME),
             weekStart = prefs[WEEK_START].toEnum(WeekStart.SYSTEM),
+            timeFormat = prefs[TIME_FORMAT].toEnum(TimeFormat.H24),
         )
     }
 
@@ -58,6 +62,7 @@ class SettingsRepository(context: Context) {
                 silenceAfterMinutes = prefs[SILENCE] ?: 10,
                 volumeButtons = prefs[VOLUME_BUTTONS].toEnum(VolumeButtons.VOLUME),
                 weekStart = prefs[WEEK_START].toEnum(WeekStart.SYSTEM),
+                timeFormat = prefs[TIME_FORMAT].toEnum(TimeFormat.H24),
             )
             val next = change(now)
             prefs[THEME] = next.theme.name
@@ -66,6 +71,7 @@ class SettingsRepository(context: Context) {
             prefs[SILENCE] = next.silenceAfterMinutes
             prefs[VOLUME_BUTTONS] = next.volumeButtons.name
             prefs[WEEK_START] = next.weekStart.name
+            prefs[TIME_FORMAT] = next.timeFormat.name
         }
     }
 
@@ -79,5 +85,6 @@ class SettingsRepository(context: Context) {
         val SILENCE = intPreferencesKey("silence_after")
         val VOLUME_BUTTONS = stringPreferencesKey("volume_buttons")
         val WEEK_START = stringPreferencesKey("week_start")
+        val TIME_FORMAT = stringPreferencesKey("time_format")
     }
 }

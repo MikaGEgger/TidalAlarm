@@ -9,16 +9,28 @@ import at.mikag.lavender.data.AlarmRepository
 import at.mikag.lavender.data.SettingsRepository
 import at.mikag.lavender.tidal.TidalApi
 import at.mikag.lavender.tidal.TidalAuth
+import at.mikag.lavender.ui.Format
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
 class LavenderApp : Application() {
     val container: AppContainer by lazy { AppContainer(this) }
 
+    /** Lives as long as the process. */
+    val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
     override fun onCreate() {
         super.onCreate()
+        AppLog.init(this)
         // Safe before first unlock: notification channels don't touch credential-protected storage.
         Notifications.createChannels(this)
+        appScope.launch {
+            container.settings.settings.collect { Format.timeFormat = it.timeFormat }
+        }
     }
 }
 

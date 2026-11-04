@@ -13,6 +13,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.view.KeyEvent
+import at.mikag.lavender.AppLog
 import at.mikag.lavender.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -86,6 +87,7 @@ class AudioControl(context: Context) {
      */
     suspend fun stopOtherPlayback() {
         if (!audio.isMusicActive) return
+        AppLog.i("Audio", "Music is playing: taking audio focus to pause it")
         val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
             .setAudioAttributes(
                 AudioAttributes.Builder()
@@ -98,11 +100,13 @@ class AudioControl(context: Context) {
         audio.requestAudioFocus(request)
         delay(700)
         if (audio.isMusicActive) {
+            AppLog.i("Audio", "Still playing after audio focus: sending the Pause key")
             audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PAUSE))
             audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PAUSE))
         }
         delay(500)
         audio.abandonAudioFocusRequest(request)
+        AppLog.i("Audio", "Music playing after stop: ${audio.isMusicActive}")
     }
 
     fun restoreVolumes() {
@@ -151,13 +155,18 @@ class BackupSound(private val context: Context) {
                 candidate.setVolume(if (rampSeconds > 0) 0.15f else 1f, if (rampSeconds > 0) 0.15f else 1f)
                 candidate.start()
                 player = candidate
+                AppLog.i("Audio", "Backup sound playing: $uri")
                 break
             } catch (e: Exception) {
                 // e.g. a ringtone on storage that isn't readable before first unlock: try the next one.
+                AppLog.w("Audio", "Couldn't play $uri", e)
                 candidate.release()
             }
         }
-        val current = player ?: return
+        val current = player ?: run {
+            AppLog.w("Audio", "No backup sound could be played")
+            return
+        }
         if (rampSeconds > 0) {
             ramp = scope.launch {
                 val steps = 20

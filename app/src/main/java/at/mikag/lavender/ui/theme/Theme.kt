@@ -91,67 +91,67 @@ private fun Color.forDark(): Color = if (luminance() < 0.30f) lerp(this, Paper, 
 private fun Color.forLight(): Color = if (luminance() > 0.22f) lerp(this, Ink, 0.38f) else this
 
 fun Palette.colorScheme(dark: Boolean): ColorScheme = if (dark) {
-    val background = lerp(primary, Ink, 0.92f)
-    val surfaceVariant = lerp(primary, Ink, 0.80f)
+    val background = lerp(primary, Ink, 0.84f)
+    val surfaceVariant = lerp(primary, Ink, 0.66f)
     val p = primary.forDark()
     val s = secondary.forDark()
     val t = tertiary.forDark()
     darkColorScheme(
         primary = p,
         onPrimary = p.onColor(),
-        primaryContainer = lerp(p, Ink, 0.55f),
-        onPrimaryContainer = lerp(p, Paper, 0.75f),
+        primaryContainer = lerp(p, Ink, 0.40f),
+        onPrimaryContainer = lerp(p, Paper, 0.82f),
         secondary = s,
         onSecondary = s.onColor(),
-        secondaryContainer = lerp(s, Ink, 0.60f),
-        onSecondaryContainer = lerp(s, Paper, 0.80f),
+        secondaryContainer = lerp(s, Ink, 0.45f),
+        onSecondaryContainer = lerp(s, Paper, 0.85f),
         tertiary = t,
         onTertiary = t.onColor(),
-        tertiaryContainer = lerp(t, Ink, 0.60f),
-        onTertiaryContainer = lerp(t, Paper, 0.80f),
+        tertiaryContainer = lerp(t, Ink, 0.45f),
+        onTertiaryContainer = lerp(t, Paper, 0.85f),
         background = background,
-        onBackground = Color(0xFFEDE7F3),
+        onBackground = Color(0xFFF3EEF8),
         surface = background,
-        onSurface = Color(0xFFEDE7F3),
+        onSurface = Color(0xFFF3EEF8),
         surfaceVariant = surfaceVariant,
-        onSurfaceVariant = Color(0xFFCFC6D9),
-        surfaceContainerLowest = lerp(primary, Ink, 0.95f),
-        surfaceContainerLow = lerp(primary, Ink, 0.89f),
-        surfaceContainer = lerp(primary, Ink, 0.86f),
-        surfaceContainerHigh = lerp(primary, Ink, 0.82f),
-        surfaceContainerHighest = lerp(primary, Ink, 0.78f),
-        outline = lerp(primary, Paper, 0.25f).copy(alpha = 0.6f),
-        outlineVariant = lerp(primary, Ink, 0.65f),
+        onSurfaceVariant = lerp(primary, Paper, 0.78f),
+        surfaceContainerLowest = lerp(primary, Ink, 0.90f),
+        surfaceContainerLow = lerp(primary, Ink, 0.80f),
+        surfaceContainer = lerp(primary, Ink, 0.76f),
+        surfaceContainerHigh = lerp(primary, Ink, 0.70f),
+        surfaceContainerHighest = lerp(primary, Ink, 0.64f),
+        outline = lerp(primary, Paper, 0.30f).copy(alpha = 0.7f),
+        outlineVariant = lerp(primary, Ink, 0.50f),
     )
 } else {
-    val background = lerp(primary, Paper, 0.94f)
+    val background = lerp(primary, Paper, 0.86f)
     val p = primary.forLight()
     val s = secondary.forLight()
     val t = tertiary.forLight()
     lightColorScheme(
         primary = p,
         onPrimary = p.onColor(),
-        primaryContainer = lerp(primary, Paper, 0.70f),
+        primaryContainer = lerp(primary, Paper, 0.55f),
         onPrimaryContainer = lerp(p, Ink, 0.55f),
         secondary = s,
         onSecondary = s.onColor(),
-        secondaryContainer = lerp(secondary, Paper, 0.72f),
+        secondaryContainer = lerp(secondary, Paper, 0.58f),
         onSecondaryContainer = lerp(s, Ink, 0.55f),
         tertiary = t,
         onTertiary = t.onColor(),
-        tertiaryContainer = lerp(tertiary, Paper, 0.72f),
+        tertiaryContainer = lerp(tertiary, Paper, 0.58f),
         onTertiaryContainer = lerp(t, Ink, 0.55f),
         background = background,
         onBackground = Color(0xFF1D1A22),
         surface = background,
         onSurface = Color(0xFF1D1A22),
-        surfaceVariant = lerp(primary, Paper, 0.82f),
-        onSurfaceVariant = Color(0xFF4A4453),
-        surfaceContainerLowest = Paper,
-        surfaceContainerLow = lerp(primary, Paper, 0.92f),
-        surfaceContainer = lerp(primary, Paper, 0.89f),
-        surfaceContainerHigh = lerp(primary, Paper, 0.86f),
-        surfaceContainerHighest = lerp(primary, Paper, 0.82f),
+        surfaceVariant = lerp(primary, Paper, 0.70f),
+        onSurfaceVariant = lerp(primary, Ink, 0.70f),
+        surfaceContainerLowest = lerp(primary, Paper, 0.95f),
+        surfaceContainerLow = lerp(primary, Paper, 0.90f),
+        surfaceContainer = lerp(primary, Paper, 0.80f),
+        surfaceContainerHigh = lerp(primary, Paper, 0.74f),
+        surfaceContainerHighest = lerp(primary, Paper, 0.68f),
         outline = lerp(primary, Ink, 0.45f).copy(alpha = 0.7f),
         outlineVariant = lerp(primary, Paper, 0.65f),
     )

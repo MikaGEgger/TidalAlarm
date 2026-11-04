@@ -3,6 +3,7 @@ package at.mikag.lavender.alarm
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import at.mikag.lavender.AppLog
 import at.mikag.lavender.container
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +26,7 @@ private fun BroadcastReceiver.runAsync(block: suspend () -> Unit) {
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val id = intent.getLongExtra(AlarmScheduler.EXTRA_ALARM_ID, -1L)
+        AppLog.i("Receiver", "${intent.action?.substringAfterLast('.')} #$id")
         if (id < 0) return
         when (intent.action) {
             ACTION_FIRE -> AlarmService.fire(context, id)
@@ -64,6 +66,7 @@ class SystemEventsReceiver : BroadcastReceiver() {
             "android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" -> false
             else -> return
         }
+        AppLog.i("Receiver", "System event ${intent.action}: rescheduling all alarms")
         runAsync { context.container.alarms.rescheduleAll(reportMissed) }
     }
 }

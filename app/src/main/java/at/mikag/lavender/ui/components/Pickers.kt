@@ -1,6 +1,5 @@
 package at.mikag.lavender.ui.components
 
-import android.text.format.DateFormat
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -15,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import at.mikag.lavender.R
+import at.mikag.lavender.ui.Format
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -28,7 +28,7 @@ fun TimePickerDialog(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    val state = rememberTimePickerState(initialHour, initialMinute, is24Hour = DateFormat.is24HourFormat(context))
+    val state = rememberTimePickerState(initialHour, initialMinute, is24Hour = Format.is24h(context))
     AlertDialog(
         onDismissRequest = onDismiss,
         text = { TimePicker(state = state) },

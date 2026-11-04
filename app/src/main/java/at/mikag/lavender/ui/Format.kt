@@ -4,6 +4,7 @@ import android.content.Context
 import android.text.format.DateFormat
 import at.mikag.lavender.R
 import at.mikag.lavender.data.Alarm
+import at.mikag.lavender.data.TimeFormat
 import at.mikag.lavender.data.WeekStart
 import java.time.DayOfWeek
 import java.time.Instant
@@ -17,14 +18,27 @@ import java.util.Locale
 
 /** Time and date texts, following the phone's 12/24-hour setting and language. */
 object Format {
-    fun time(context: Context, millis: Long): String = DateFormat.getTimeFormat(context).format(Date(millis))
+    /** Kept in sync with the setting by LavenderApp; used everywhere times are shown (also in notifications). */
+    @Volatile
+    var timeFormat: TimeFormat = TimeFormat.H24
+
+    fun is24h(context: Context): Boolean = when (timeFormat) {
+        TimeFormat.H24 -> true
+        TimeFormat.H12 -> false
+        TimeFormat.SYSTEM -> DateFormat.is24HourFormat(context)
+    }
+
+    fun time(context: Context, millis: Long): String {
+        val pattern = DateFormat.getBestDateTimePattern(Locale.getDefault(), if (is24h(context)) "Hm" else "hm")
+        return DateFormat.format(pattern, Date(millis)).toString()
+    }
 
     fun time(context: Context, hour: Int, minute: Int): String {
         val calendar = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, hour)
             set(Calendar.MINUTE, minute)
         }
-        return DateFormat.getTimeFormat(context).format(calendar.time)
+        return time(context, calendar.timeInMillis)
     }
 
     fun dayAndTime(context: Context, millis: Long): String {

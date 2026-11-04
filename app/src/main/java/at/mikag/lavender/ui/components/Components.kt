@@ -17,6 +17,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -33,7 +34,11 @@ fun FlagStripe(modifier: Modifier = Modifier, height: Dp = 6.dp, stripes: List<C
     }
 }
 
-/** Vertical flag swatch for the theme picker. */
+/** The flag as a soft diagonal wash, for headers and the ringing screen. */
+fun flagWash(stripes: List<Color>, alpha: Float): Brush =
+    Brush.linearGradient(stripes.map { it.copy(alpha = alpha) })
+
+/** Vertical flag swatch for the theme picker, and the colour edge on alarm cards. */
 @Composable
 fun FlagSwatch(stripes: List<Color>, modifier: Modifier = Modifier) {
     Column(modifier) {

@@ -52,6 +52,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import at.mikag.lavender.AppLog
 import at.mikag.lavender.R
 import at.mikag.lavender.alarm.AlarmService
 import at.mikag.lavender.alarm.RingController
@@ -76,6 +77,7 @@ class RingingActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AppLog.i("Screen", "Ringing screen created (restored=${savedInstanceState != null})")
         if (Build.VERSION.SDK_INT >= 27) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
@@ -92,14 +94,18 @@ class RingingActivity : ComponentActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                AppLog.i("Screen", "Ringing screen visible")
                 RingController.screenVisible.value = true
                 try {
                     RingController.launchRequest.filterNotNull().collect { link ->
                         RingController.launchRequest.value = null
-                        if (TidalLauncher.open(this@RingingActivity, link)) RingController.launched.value = link
+                        val opened = TidalLauncher.open(this@RingingActivity, link)
+                        AppLog.i("Screen", "Opened in TIDAL: $link -> ${if (opened) "ok" else "FAILED"}")
+                        if (opened) RingController.launched.value = link
                     }
                 } finally {
                     RingController.screenVisible.value = false
+                    AppLog.i("Screen", "Ringing screen hidden")
                 }
             }
         }
@@ -118,6 +124,7 @@ class RingingActivity : ComponentActivity() {
         setContent {
             val settings by container.settings.settings.collectAsStateWithLifecycle(initialValue = AppSettings())
             val dark = isDark(settings.darkMode)
+            at.mikag.lavender.ui.Format.timeFormat = settings.timeFormat
             LaunchedEffect(dark) {
                 val style = if (dark) SystemBarStyle.dark(AndroidColor.TRANSPARENT) else SystemBarStyle.light(AndroidColor.TRANSPARENT, AndroidColor.TRANSPARENT)
                 enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
@@ -166,7 +173,7 @@ private fun RingingScreen(onSnooze: () -> Unit, onDismiss: () -> Unit) {
         Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .background(Brush.verticalGradient(stripes.map { it.copy(alpha = 0.18f) }))
+            .background(Brush.verticalGradient(stripes.map { it.copy(alpha = 0.55f) }))
     ) {
         Column(Modifier.fillMaxSize().safeDrawingPadding()) {
             FlagStripe(height = 8.dp)
@@ -182,7 +189,7 @@ private fun RingingScreen(onSnooze: () -> Unit, onDismiss: () -> Unit) {
                     modifier = Modifier.size(40.dp),
                 )
                 Spacer(Modifier.height(12.dp))
-                Text(Format.time(context, now), fontSize = 84.sp, fontWeight = FontWeight.Light)
+                Text(Format.time(context, now), fontSize = 88.sp, fontWeight = FontWeight.Normal, color = MaterialTheme.colorScheme.onBackground)
                 Text(Format.date(now), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 val alarm = state?.alarm
                 if (alarm != null && alarm.label.isNotBlank()) {

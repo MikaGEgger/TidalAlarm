@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -53,6 +54,7 @@ import at.mikag.lavender.R
 import at.mikag.lavender.container
 import at.mikag.lavender.data.AppSettings
 import at.mikag.lavender.data.DarkMode
+import at.mikag.lavender.data.TimeFormat
 import at.mikag.lavender.data.VolumeButtons
 import at.mikag.lavender.data.WeekStart
 import at.mikag.lavender.tidal.TidalLauncher
@@ -95,11 +97,11 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     val configured: Boolean get() = auth.isConfigured
 }
 
-private enum class Dialog { SNOOZE, SILENCE, VOLUME_BUTTONS, WEEK_START }
+private enum class Dialog { SNOOZE, SILENCE, VOLUME_BUTTONS, WEEK_START, TIME_FORMAT }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit) {
+fun SettingsScreen(onBack: () -> Unit, onOpenLog: () -> Unit) {
     val vm: SettingsViewModel = viewModel()
     val context = LocalContext.current
     val settings by vm.settings.collectAsStateWithLifecycle()
@@ -174,6 +176,11 @@ fun SettingsScreen(onBack: () -> Unit) {
             }
 
             SectionTitle(stringResource(R.string.settings_alarms))
+            SettingRow(
+                stringResource(R.string.settings_time_format),
+                timeFormatLabel(settings.timeFormat),
+                onClick = { dialog = Dialog.TIME_FORMAT },
+            )
             SettingRow(
                 stringResource(R.string.settings_default_snooze),
                 stringResource(R.string.minutes, settings.defaultSnoozeMinutes),
@@ -252,6 +259,15 @@ fun SettingsScreen(onBack: () -> Unit) {
                 onClick = { Reliability.openUrl(context, Reliability.manufacturerTipsUrl()) },
             )
 
+            SectionTitle(stringResource(R.string.settings_developer))
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.log_title)) },
+                supportingContent = { Text(stringResource(R.string.settings_log_text)) },
+                leadingContent = { Icon(Icons.Filled.BugReport, contentDescription = null) },
+                modifier = Modifier.clickable(onClick = onOpenLog),
+                colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
+            )
+
             SectionTitle(stringResource(R.string.settings_about))
             ListItem(
                 headlineContent = { Text(stringResource(R.string.app_name) + " " + BuildConfig.VERSION_NAME) },
@@ -295,9 +311,26 @@ fun SettingsScreen(onBack: () -> Unit) {
             onSelect = { choice -> vm.update { it.copy(weekStart = choice) } },
             onDismiss = { dialog = null },
         )
+        Dialog.TIME_FORMAT -> ChoiceDialog(
+            title = stringResource(R.string.settings_time_format),
+            options = TimeFormat.entries,
+            selected = settings.timeFormat,
+            label = { timeFormatLabel(it) },
+            onSelect = { choice -> vm.update { it.copy(timeFormat = choice) } },
+            onDismiss = { dialog = null },
+        )
         null -> Unit
     }
 }
+
+@Composable
+private fun timeFormatLabel(choice: TimeFormat): String = stringResource(
+    when (choice) {
+        TimeFormat.H24 -> R.string.time_format_24
+        TimeFormat.H12 -> R.string.time_format_12
+        TimeFormat.SYSTEM -> R.string.time_format_system
+    }
+)
 
 @Composable
 private fun StatusRow(ok: Boolean, title: String, text: String, onClick: (() -> Unit)?, warnOnly: Boolean = false) {

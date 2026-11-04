@@ -1,5 +1,6 @@
 package at.mikag.lavender.tidal
 
+import at.mikag.lavender.AppLog
 import at.mikag.lavender.data.TidalItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -129,7 +130,10 @@ class TidalApi(private val http: OkHttpClient, private val auth: TidalAuth) {
                         token = auth.accessToken(forceRefresh = true) ?: throw ApiException(401, "Not logged in")
                         return@use
                     }
-                    if (!response.isSuccessful) throw ApiException(response.code, "TIDAL: ${response.code} ${text.take(300)}")
+                    if (!response.isSuccessful) {
+                        AppLog.w("Tidal", "API $path -> ${response.code}: ${text.take(300)}")
+                        throw ApiException(response.code, "TIDAL: ${response.code} ${text.take(300)}")
+                    }
                     return@withContext json.parseToJsonElement(text).jsonObject
                 }
             }

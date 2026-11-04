@@ -22,6 +22,12 @@
     <string name="action_test_alarm">Test this alarm now</string>
     <string name="action_undo">Undo</string>
     <string name="action_use">Use</string>
+    <string name="action_allow">Allow</string>
+    <string name="action_later">Later</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_copy">Copy</string>
+    <string name="action_share">Share</string>
+    <string name="action_clear_log">Clear log</string>
 
     <!-- Notification channels -->
     <string name="channel_ringing">Ringing alarms</string>
@@ -60,6 +66,8 @@
     <string name="status_skipping">Skipping %1$s</string>
     <string name="reliability_banner_title">Alarms might not ring</string>
     <string name="reliability_banner_text">A permission is missing. Tap to fix it.</string>
+    <string name="permission_prompt_title">Allow alarms to ring</string>
+    <string name="permission_prompt_text">Without this, alarms can\'t show over the lock screen and only play the backup sound in the dark. Missing: %1$s. Tap Allow and switch it on for Lavender.</string>
 
     <!-- Editor -->
     <string name="editor_title">Alarm</string>
@@ -130,6 +138,10 @@
     <string name="volume_buttons_snooze">Snooze</string>
     <string name="volume_buttons_dismiss">Dismiss</string>
     <string name="settings_week_start">Week starts on</string>
+    <string name="settings_time_format">Time format</string>
+    <string name="time_format_24">24-hour</string>
+    <string name="time_format_12">12-hour</string>
+    <string name="time_format_system">Like the system</string>
     <string name="week_start_system">Like the system</string>
     <string name="settings_language">Language</string>
     <string name="settings_tidal">TIDAL</string>
@@ -149,6 +161,11 @@
     <string name="reliability_battery_text">Recommended. Some phones stop apps in the background; open App info → Battery → Unrestricted.</string>
     <string name="reliability_phone_tips">Tips for %1$s phones</string>
     <string name="reliability_phone_tips_text">Some phone makers have extra battery savers that can stop alarms. Opens dontkillmyapp.com.</string>
+    <string name="settings_developer">Developer</string>
+    <string name="log_title">Log</string>
+    <string name="settings_log_text">What the alarms did and why. Copy it to report a problem.</string>
+    <string name="log_empty">Nothing logged yet.</string>
+    <string name="log_copied">Log copied</string>
     <string name="settings_about">About</string>
     <string name="settings_about_text">Your alarms stay on this phone. Lavender isn\'t made by or affiliated with TIDAL; it uses the TIDAL app and the official TIDAL login.</string>
 </resources>

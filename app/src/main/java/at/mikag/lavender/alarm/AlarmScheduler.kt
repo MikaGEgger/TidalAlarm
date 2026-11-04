@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import at.mikag.lavender.AppLog
 import at.mikag.lavender.data.Alarm
 import at.mikag.lavender.ui.MainActivity
 import java.time.ZonedDateTime
@@ -26,6 +27,7 @@ class AlarmScheduler(private val context: Context) {
             return alarm.copy(scheduledFor = null, enabled = if (expired) false else alarm.enabled)
         }
         val at = next.toInstant().toEpochMilli()
+        AppLog.i("Schedule", "#${alarm.id} next at $next (exact=${canScheduleExact()}${if (alarm.snoozedUntil != null) ", snoozed" else ""})")
         val fire = firePendingIntent(alarm.id)
         try {
             if (canScheduleExact()) {
@@ -37,6 +39,7 @@ class AlarmScheduler(private val context: Context) {
                 manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, fire)
             }
         } catch (e: SecurityException) {
+            AppLog.w("Schedule", "Exact alarm refused, using inexact", e)
             manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, fire)
         }
         scheduleUpcoming(alarm, at)
