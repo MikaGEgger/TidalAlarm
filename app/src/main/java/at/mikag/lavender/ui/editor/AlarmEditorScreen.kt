@@ -319,7 +319,11 @@ private fun EditorContent(
             modifier = Modifier.clickable(onClick = onPickMusic),
             colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
         )
-        if (music != null && !android.provider.Settings.canDrawOverlays(context)) {
+        var canOverlay by remember { mutableStateOf(android.provider.Settings.canDrawOverlays(context)) }
+        androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+            canOverlay = android.provider.Settings.canDrawOverlays(context)
+        }
+        if (music != null && !canOverlay) {
             Text(
                 stringResource(R.string.editor_overlay_tip),
                 style = MaterialTheme.typography.bodySmall,
