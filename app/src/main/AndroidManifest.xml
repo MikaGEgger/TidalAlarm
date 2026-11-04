@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- Optional, switched on by the user: lets the ringing screen come back in front of TIDAL on an unlocked phone. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- Alarm clock apps get exact alarms automatically from Android 13 (USE_EXACT_ALARM, Play policy: core alarm function). -->
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission

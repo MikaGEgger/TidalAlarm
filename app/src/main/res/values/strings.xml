@@ -81,6 +81,7 @@
     <string name="editor_music">TIDAL music</string>
     <string name="editor_music_none">None. Tap to pick a playlist or track.</string>
     <string name="editor_tidal_missing">The TIDAL app isn\'t installed: the backup sound will ring.</string>
+    <string name="editor_overlay_tip">Tip: allow \"Display over other apps\" so Snooze and Dismiss come back in front of TIDAL. Tap to open the setting.</string>
     <string name="editor_backup_sound">Backup sound</string>
     <string name="editor_alarm_sound">Alarm sound</string>
     <string name="editor_sound_explainer">Lavender\'s chime always works, even right after a restart. A sound from your phone may not be available before you first unlock it; then the chime plays instead.</string>
@@ -157,6 +158,8 @@
     <string name="reliability_full_screen_text">Needed to show the alarm over the lock screen.</string>
     <string name="reliability_exact">Alarms &amp; reminders</string>
     <string name="reliability_exact_text">Needed to ring on the minute.</string>
+    <string name="reliability_overlay">Display over other apps</string>
+    <string name="reliability_overlay_text">Recommended with TIDAL music: brings Snooze and Dismiss back in front of TIDAL, also when the phone isn\'t locked.</string>
     <string name="reliability_battery">Battery: unrestricted</string>
     <string name="reliability_battery_text">Recommended. Some phones stop apps in the background; open App info → Battery → Unrestricted.</string>
     <string name="reliability_phone_tips">Tips for %1$s phones</string>

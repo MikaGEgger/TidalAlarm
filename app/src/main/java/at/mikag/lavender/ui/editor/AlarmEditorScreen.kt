@@ -76,6 +76,7 @@ import at.mikag.lavender.data.Alarm
 import at.mikag.lavender.data.AppSettings
 import at.mikag.lavender.tidal.TidalLauncher
 import at.mikag.lavender.ui.Format
+import at.mikag.lavender.ui.Reliability
 import at.mikag.lavender.ui.components.ChoiceDialog
 import at.mikag.lavender.ui.components.DateDialog
 import at.mikag.lavender.ui.components.SectionTitle
@@ -318,6 +319,17 @@ private fun EditorContent(
             modifier = Modifier.clickable(onClick = onPickMusic),
             colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
         )
+        if (music != null && !android.provider.Settings.canDrawOverlays(context)) {
+            Text(
+                stringResource(R.string.editor_overlay_tip),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { Reliability.openOverlaySettings(context) }
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+            )
+        }
         ListItem(
             headlineContent = {
                 Text(stringResource(if (music != null) R.string.editor_backup_sound else R.string.editor_alarm_sound))

@@ -247,6 +247,13 @@ fun SettingsScreen(onBack: () -> Unit, onOpenLog: () -> Unit) {
                 )
             }
             StatusRow(
+                ok = reliability.overlay,
+                title = stringResource(R.string.reliability_overlay),
+                text = stringResource(R.string.reliability_overlay_text),
+                onClick = { Reliability.openOverlaySettings(context) },
+                warnOnly = true,
+            )
+            StatusRow(
                 ok = reliability.batteryUnrestricted,
                 title = stringResource(R.string.reliability_battery),
                 text = stringResource(R.string.reliability_battery_text),

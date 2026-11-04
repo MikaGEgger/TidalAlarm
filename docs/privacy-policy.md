@@ -19,6 +19,7 @@ Lavender has no servers of its own, no analytics, no advertising and no tracking
 ## Permissions
 
 - Notifications, full-screen alarms, exact alarms, wake lock, vibration, foreground service, starting after a restart: to ring reliably and show the alarm over the lock screen.
+- Display over other apps (optional): only so the ringing alarm screen can come back in front of the TIDAL app.
 - Internet: only for the TIDAL login and library.
 - Visibility of the TIDAL app: to check that it's installed and to open your music in it.
 

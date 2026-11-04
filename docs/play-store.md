@@ -16,6 +16,7 @@ What's needed before Lavender can be published, and what each Play Console form 
 | Full-screen intent (`USE_FULL_SCREEN_INTENT`) | Alarm clock: shows the ringing alarm over the lock screen. |
 | Foreground service: `systemExempted` | Keeps a ringing alarm (sound, vibration, TIDAL hand-off) alive in the background. Needs a short screen recording of an alarm ringing. |
 | Foreground service: `mediaPlayback` | Fallback type on Android 10–13, plays the alarm sound. |
+| Display over other apps (`SYSTEM_ALERT_WINDOW`) | Optional, switched on by the user in Settings. Lets the ringing alarm screen come back in front of the TIDAL app (which plays the alarm music) so Snooze/Dismiss stay reachable on an unlocked phone. No overlay windows are drawn. |
 | Package visibility | Only `com.aspiro.tidal` is queried, to check that TIDAL is installed and open the chosen music in it. |
 | Data safety | No data collected or shared. The TIDAL login token is stored only on the phone, encrypted. Data in transit uses HTTPS. |
 | Ads | No ads. |

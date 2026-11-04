@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import android.os.UserManager
+import android.provider.Settings
 import at.mikag.lavender.AppLog
 import at.mikag.lavender.R
 import at.mikag.lavender.container
@@ -162,10 +163,10 @@ class AlarmService : Service() {
         audio.stopOtherPlayback()
         audio.prepareMusic(alarm.volumePercent, alarm.rampSeconds)
 
-        if (!waitForScreen(SCREEN_WAIT_MS)) {
+        if (!waitForScreen(SCREEN_WAIT_MS) && !bringScreenBack(alarm, "it didn't appear on its own")) {
             // The phone is in use: Android shows a pop-up notification instead of the ringing screen,
             // and only a visible screen may open TIDAL. Ring with the backup sound until the user opens it.
-            AppLog.w(TAG, "Ringing screen didn't appear within ${SCREEN_WAIT_MS / 1000} s: backup sound until it's opened")
+            AppLog.w(TAG, "Ringing screen didn't appear: backup sound until it's opened")
             playBackup(alarm, tidalFailed = false)
             waitForScreen(Long.MAX_VALUE)
             AppLog.i(TAG, "Ringing screen opened: switching from backup sound to TIDAL")
@@ -187,12 +188,19 @@ class AlarmService : Service() {
             val openedAt = System.currentTimeMillis()
 
             val playing = coroutineScope {
-                // TIDAL is now in front of the ringing screen; bring Snooze/Dismiss back on top.
-                launch {
-                    delay(RESHOW_DELAY_MS)
-                    Notifications.reshowRingingScreen(this@AlarmService, alarm)
+                // TIDAL is now in front of the ringing screen. Bring Snooze/Dismiss back on top as soon as
+                // music plays, or after a few seconds at the latest: without "Display over other apps",
+                // Android lets an app reopen its screen only shortly after it was last in front.
+                val latest = launch {
+                    delay(BRING_BACK_LATEST_MS)
+                    bringScreenBack(alarm, "${BRING_BACK_LATEST_MS / 1000} s after opening TIDAL")
                 }
-                audio.waitForMusic(if (index == 0) FIRST_LINK_WAIT_MS else NEXT_LINK_WAIT_MS)
+                val ok = audio.waitForMusic(if (index == 0) FIRST_LINK_WAIT_MS else NEXT_LINK_WAIT_MS)
+                if (ok && latest.isActive) {
+                    latest.cancel()
+                    bringScreenBack(alarm, "music started")
+                }
+                ok
             }
             AppLog.i(TAG, if (playing) "Music detected ${System.currentTimeMillis() - openedAt} ms after opening link ${index + 1}" else "No music after link ${index + 1}")
             if (playing) {
@@ -210,6 +218,33 @@ class AlarmService : Service() {
             }
         }
         playBackup(alarm, tidalFailed = true)
+    }
+
+    /**
+     * Brings the ringing screen back in front of TIDAL. First directly: Android allows that shortly after the
+     * screen was last shown, and always with "Display over other apps". If that doesn't work, a fresh
+     * full-screen notification, which brings it back on a locked phone.
+     */
+    private suspend fun bringScreenBack(alarm: Alarm, reason: String): Boolean {
+        if (RingController.screenVisible.value) return true
+        AppLog.i(TAG, "Bringing the ringing screen back ($reason, displayOverOtherApps=${Settings.canDrawOverlays(this)})")
+        try {
+            startActivity(Intent(this, RingingActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } catch (e: RuntimeException) {
+            AppLog.w(TAG, "Opening the ringing screen directly failed", e)
+        }
+        if (waitForScreen(1_500)) {
+            AppLog.i(TAG, "Ringing screen back in front (opened directly)")
+            return true
+        }
+        Notifications.reshowRingingScreen(this, alarm)
+        val back = waitForScreen(2_500)
+        AppLog.i(
+            TAG,
+            if (back) "Ringing screen back in front (full-screen notification)"
+            else "Ringing screen did NOT come back; Snooze/Dismiss are in the notification",
+        )
+        return back
     }
 
     private suspend fun waitForScreen(timeoutMs: Long): Boolean {
@@ -341,7 +376,7 @@ class AlarmService : Service() {
         private const val TAG = "Ring"
 
         private const val SCREEN_WAIT_MS = 5_000L
-        private const val RESHOW_DELAY_MS = 5_000L
+        private const val BRING_BACK_LATEST_MS = 8_000L
         private const val FIRST_LINK_WAIT_MS = 15_000L
         private const val NEXT_LINK_WAIT_MS = 10_000L
         private const val TIDAL_SILENCE_LIMIT_MS = 10_000L

@@ -80,6 +80,7 @@
     <string name="editor_music">TIDAL-Musik</string>
     <string name="editor_music_none">Keine. Tippe, um eine Playlist oder einen Titel zu wählen.</string>
     <string name="editor_tidal_missing">Die TIDAL-App ist nicht installiert: Es klingelt der Ersatzton.</string>
+    <string name="editor_overlay_tip">Tipp: Erlaube „Über anderen Apps einblenden“, damit Schlummern und Beenden wieder vor TIDAL erscheinen. Tippe, um die Einstellung zu öffnen.</string>
     <string name="editor_backup_sound">Ersatzton</string>
     <string name="editor_alarm_sound">Weckton</string>
     <string name="editor_sound_explainer">Das Lavender-Klingeln funktioniert immer, auch direkt nach einem Neustart. Ein Ton vom Handy ist vor dem ersten Entsperren eventuell nicht verfügbar; dann klingelt stattdessen Lavender.</string>
@@ -156,6 +157,8 @@
     <string name="reliability_full_screen_text">Nötig, damit der Wecker über dem Sperrbildschirm erscheint.</string>
     <string name="reliability_exact">Wecker &amp; Erinnerungen</string>
     <string name="reliability_exact_text">Nötig, um auf die Minute genau zu klingeln.</string>
+    <string name="reliability_overlay">Über anderen Apps einblenden</string>
+    <string name="reliability_overlay_text">Empfohlen mit TIDAL-Musik: Holt Schlummern und Beenden wieder vor TIDAL, auch wenn das Handy nicht gesperrt ist.</string>
     <string name="reliability_battery">Akku: nicht eingeschränkt</string>
     <string name="reliability_battery_text">Empfohlen. Manche Handys stoppen Apps im Hintergrund; öffne App-Info → Akku → Nicht eingeschränkt.</string>
     <string name="reliability_phone_tips">Tipps für %1$s-Handys</string>

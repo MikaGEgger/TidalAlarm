@@ -20,6 +20,8 @@ object Reliability {
         val fullScreen: Boolean,
         val exactAlarms: Boolean,
         val batteryUnrestricted: Boolean,
+        /** "Display over other apps": optional, brings the ringing screen back in front of TIDAL when unlocked. */
+        val overlay: Boolean,
     ) {
         /** Without these, alarms may be silent or not show over the lock screen. */
         val critical: Boolean get() = notifications && fullScreen && exactAlarms
@@ -34,6 +36,7 @@ object Reliability {
             context.getSystemService(AlarmManager::class.java).canScheduleExactAlarms(),
         batteryUnrestricted = context.getSystemService(PowerManager::class.java)
             .isIgnoringBatteryOptimizations(context.packageName),
+        overlay = Settings.canDrawOverlays(context),
     )
 
     private fun packageUri(context: Context) = Uri.parse("package:${context.packageName}")
@@ -54,6 +57,9 @@ object Reliability {
             open(context, Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, packageUri(context)))
         }
     }
+
+    fun openOverlaySettings(context: Context) =
+        open(context, Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, packageUri(context)))
 
     /** App info page, where "Battery" can be set to Unrestricted. */
     fun openAppDetails(context: Context) =
