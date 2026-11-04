@@ -4,7 +4,7 @@ What's needed before Lavender can be published, and what each Play Console form 
 
 ## 1. Must change in the code
 
-- [ ] **Target Android 16 (API 36).** Since 31 Aug 2026, new apps and updates must target API 36. The MVP targets API 35 (fine for testing). Raising it needs a newer Android Gradle Plugin (8.9+) and Gradle wrapper, then a test round on a phone.
+- [x] **Target Android 16 (API 36).** Required for new apps and updates since 31 Aug 2026. Done (AGP 8.9.1, Gradle 8.11.1).
 - [ ] **Release build with an upload key.** Create a private upload key once, keep it outside the repo, and add it as GitHub secrets (keystore as base64, passwords). The committed `dev.keystore` is for test builds only.
 - [ ] **App bundle** (`bundleRelease`) instead of an APK, and turn on code shrinking (R8) with a test round.
 
