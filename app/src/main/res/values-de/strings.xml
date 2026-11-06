@@ -168,6 +168,12 @@
     <string name="settings_log_text">Was die Wecker gemacht haben und warum. Zum Melden eines Problems kopieren.</string>
     <string name="log_empty">Noch nichts protokolliert.</string>
     <string name="log_copied">Log kopiert</string>
+    <string name="log_sending">Das Log wird gesendet, sobald eine Verbindung besteht …</string>
+    <string name="action_send_log">Log jetzt senden</string>
+    <string name="settings_auto_send_logs">Logs automatisch senden</string>
+    <string name="settings_auto_send_text">Nach jedem Wecker geht das Log an das GitHub-Repository des Projekts (nur Testversionen).</string>
+    <string name="settings_auto_send_last">Zuletzt gesendet: %1$s</string>
+    <string name="settings_auto_send_off_build">In dieser Version nicht eingerichtet.</string>
     <string name="settings_about">Über</string>
     <string name="settings_about_text">Deine Wecker bleiben auf diesem Handy. Lavender ist nicht von TIDAL und nicht mit TIDAL verbunden; es nutzt die TIDAL-App und die offizielle TIDAL-Anmeldung.</string>
 </resources>

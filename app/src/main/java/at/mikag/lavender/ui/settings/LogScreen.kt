@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,6 +38,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.mikag.lavender.AppLog
+import at.mikag.lavender.LogUpload
 import at.mikag.lavender.R
 
 /** Developer log: what the alarm did and why. Copy it and paste it into a chat or an issue. */
@@ -59,6 +61,14 @@ fun LogScreen(onBack: () -> Unit) {
                     }
                 },
                 actions = {
+                    if (LogUpload.isConfigured) {
+                        IconButton(onClick = {
+                            LogUpload.schedule(context, delaySeconds = 0)
+                            Toast.makeText(context, R.string.log_sending, Toast.LENGTH_SHORT).show()
+                        }) {
+                            Icon(Icons.Filled.CloudUpload, contentDescription = stringResource(R.string.action_send_log))
+                        }
+                    }
                     IconButton(onClick = { text = AppLog.read() }) {
                         Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.action_refresh))
                     }

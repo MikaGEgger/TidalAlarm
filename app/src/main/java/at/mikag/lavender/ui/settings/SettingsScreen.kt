@@ -267,6 +267,30 @@ fun SettingsScreen(onBack: () -> Unit, onOpenLog: () -> Unit) {
             )
 
             SectionTitle(stringResource(R.string.settings_developer))
+            val lastSent = at.mikag.lavender.LogUpload.lastSent(context)
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_auto_send_logs)) },
+                supportingContent = {
+                    Text(
+                        when {
+                            !at.mikag.lavender.LogUpload.isConfigured -> stringResource(R.string.settings_auto_send_off_build)
+                            lastSent > 0 -> stringResource(
+                                R.string.settings_auto_send_last,
+                                at.mikag.lavender.ui.Format.dayAndTime(context, lastSent),
+                            )
+                            else -> stringResource(R.string.settings_auto_send_text)
+                        }
+                    )
+                },
+                trailingContent = {
+                    androidx.compose.material3.Switch(
+                        checked = settings.autoSendLogs && at.mikag.lavender.LogUpload.isConfigured,
+                        enabled = at.mikag.lavender.LogUpload.isConfigured,
+                        onCheckedChange = { on -> vm.update { it.copy(autoSendLogs = on) } },
+                    )
+                },
+                colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
+            )
             ListItem(
                 headlineContent = { Text(stringResource(R.string.log_title)) },
                 supportingContent = { Text(stringResource(R.string.settings_log_text)) },

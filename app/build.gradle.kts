@@ -14,13 +14,20 @@ android {
         applicationId = "at.mikag.lavender"
         minSdk = 26
         targetSdk = 36
-        versionCode = 4
-        versionName = "0.3.1"
+        versionCode = 5
+        versionName = "0.4.0"
 
         val clientId = (project.findProperty("tidalClientId") as String?).orEmpty().trim()
         buildConfigField("String", "TIDAL_CLIENT_ID", "\"$clientId\"")
         buildConfigField("String", "TIDAL_REDIRECT_URI", "\"tidalarm://auth\"")
+        // Where test builds post their logs (as comments on a "Device log" issue).
+        buildConfigField("String", "LOG_REPO", "\"MikaGEgger/TidalAlarm\"")
     }
+
+    // GitHub token for uploading logs: from the LOG_UPLOAD_TOKEN secret in CI, or a personal
+    // ~/.gradle/gradle.properties entry (logUploadToken=…). Never committed, and only in test builds.
+    val logUploadToken = (System.getenv("LOG_UPLOAD_TOKEN") ?: project.findProperty("logUploadToken") as String?)
+        .orEmpty().trim()
 
     signingConfigs {
         // Development key, committed on purpose: builds from any computer or from GitHub
@@ -36,10 +43,13 @@ android {
     buildTypes {
         debug {
             signingConfig = signingConfigs.getByName("dev")
+            buildConfigField("String", "LOG_UPLOAD_TOKEN", "\"$logUploadToken\"")
         }
         release {
             isMinifyEnabled = false
             signingConfig = signingConfigs.getByName("dev")
+            // Play Store builds never send logs anywhere.
+            buildConfigField("String", "LOG_UPLOAD_TOKEN", "\"\"")
         }
     }
 
@@ -95,6 +105,7 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.androidx.browser)
     implementation(libs.coil.compose)
+    implementation(libs.androidx.work)
 
     testImplementation(libs.junit)
 }

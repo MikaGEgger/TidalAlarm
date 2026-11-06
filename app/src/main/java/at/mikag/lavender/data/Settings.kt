@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -31,6 +32,8 @@ data class AppSettings(
     val volumeButtons: VolumeButtons = VolumeButtons.VOLUME,
     val weekStart: WeekStart = WeekStart.SYSTEM,
     val timeFormat: TimeFormat = TimeFormat.H24,
+    /** Test builds: send the log to the project's GitHub repo after each alarm. */
+    val autoSendLogs: Boolean = true,
 )
 
 class SettingsRepository(context: Context) {
@@ -48,6 +51,7 @@ class SettingsRepository(context: Context) {
             volumeButtons = prefs[VOLUME_BUTTONS].toEnum(VolumeButtons.VOLUME),
             weekStart = prefs[WEEK_START].toEnum(WeekStart.SYSTEM),
             timeFormat = prefs[TIME_FORMAT].toEnum(TimeFormat.H24),
+            autoSendLogs = prefs[AUTO_SEND_LOGS] ?: true,
         )
     }
 
@@ -63,6 +67,7 @@ class SettingsRepository(context: Context) {
                 volumeButtons = prefs[VOLUME_BUTTONS].toEnum(VolumeButtons.VOLUME),
                 weekStart = prefs[WEEK_START].toEnum(WeekStart.SYSTEM),
                 timeFormat = prefs[TIME_FORMAT].toEnum(TimeFormat.H24),
+                autoSendLogs = prefs[AUTO_SEND_LOGS] ?: true,
             )
             val next = change(now)
             prefs[THEME] = next.theme.name
@@ -72,6 +77,7 @@ class SettingsRepository(context: Context) {
             prefs[VOLUME_BUTTONS] = next.volumeButtons.name
             prefs[WEEK_START] = next.weekStart.name
             prefs[TIME_FORMAT] = next.timeFormat.name
+            prefs[AUTO_SEND_LOGS] = next.autoSendLogs
         }
     }
 
@@ -86,5 +92,6 @@ class SettingsRepository(context: Context) {
         val VOLUME_BUTTONS = stringPreferencesKey("volume_buttons")
         val WEEK_START = stringPreferencesKey("week_start")
         val TIME_FORMAT = stringPreferencesKey("time_format")
+        val AUTO_SEND_LOGS = booleanPreferencesKey("auto_send_logs")
     }
 }

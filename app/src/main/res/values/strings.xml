@@ -169,6 +169,12 @@
     <string name="settings_log_text">What the alarms did and why. Copy it to report a problem.</string>
     <string name="log_empty">Nothing logged yet.</string>
     <string name="log_copied">Log copied</string>
+    <string name="log_sending">Sending the log as soon as there\'s a connection …</string>
+    <string name="action_send_log">Send log now</string>
+    <string name="settings_auto_send_logs">Send logs automatically</string>
+    <string name="settings_auto_send_text">After each alarm, the log goes to the project\'s GitHub repository (test builds only).</string>
+    <string name="settings_auto_send_last">Last sent: %1$s</string>
+    <string name="settings_auto_send_off_build">Not set up in this build.</string>
     <string name="settings_about">About</string>
     <string name="settings_about_text">Your alarms stay on this phone. Lavender isn\'t made by or affiliated with TIDAL; it uses the TIDAL app and the official TIDAL login.</string>
 </resources>

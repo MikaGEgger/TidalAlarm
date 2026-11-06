@@ -12,6 +12,7 @@ import android.os.PowerManager
 import android.os.UserManager
 import android.provider.Settings
 import at.mikag.lavender.AppLog
+import at.mikag.lavender.LogUpload
 import at.mikag.lavender.R
 import at.mikag.lavender.container
 import at.mikag.lavender.ui.ringing.RingingActivity
@@ -322,6 +323,7 @@ class AlarmService : Service() {
                     Outcome.SILENCED -> Notifications.missed(context, alarm, startedAt, silenced = true)
                     Outcome.DISMISS -> Unit
                 }
+                if (container.settings.current().autoSendLogs) LogUpload.schedule(context, delaySeconds = 60)
             }
             shutDown()
         }

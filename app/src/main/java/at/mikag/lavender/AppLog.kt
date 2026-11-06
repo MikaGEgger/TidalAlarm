@@ -16,12 +16,18 @@ import java.util.Locale
  */
 object AppLog {
     private const val MAX_BYTES = 300 * 1024
+    private const val MAX_PENDING_BYTES = 200 * 1024
     private val lock = Any()
     private var file: File? = null
+
+    /** Lines not yet uploaded (only used when the build can upload logs). */
+    private var pending: File? = null
     private val time = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US)
 
     fun init(context: Context) {
-        file = File(context.createDeviceProtectedStorageContext().filesDir, "lavender.log")
+        val dir = context.createDeviceProtectedStorageContext().filesDir
+        file = File(dir, "lavender.log")
+        if (BuildConfig.LOG_UPLOAD_TOKEN.isNotBlank()) pending = File(dir, "lavender-upload.log")
     }
 
     fun i(tag: String, message: String) {
@@ -42,7 +48,14 @@ object AppLog {
                     val kept = target.readText().takeLast(MAX_BYTES / 2)
                     target.writeText(kept.substringAfter('\n'))
                 }
-                target.appendText("${time.format(Date())} $level $tag: $message\n")
+                val line = "${time.format(Date())} $level $tag: $message\n"
+                target.appendText(line)
+                pending?.let { upload ->
+                    if (upload.length() > MAX_PENDING_BYTES) {
+                        upload.writeText(upload.readText().takeLast(MAX_PENDING_BYTES / 2).substringAfter('\n'))
+                    }
+                    upload.appendText(line)
+                }
             } catch (e: IOException) {
                 // Logging must never break an alarm.
             }
@@ -55,6 +68,23 @@ object AppLog {
         } catch (e: IOException) {
             ""
         }
+    }
+
+    fun pendingForUpload(): String = synchronized(lock) {
+        try {
+            pending?.takeIf { it.exists() }?.readText().orEmpty()
+        } catch (e: IOException) {
+            ""
+        }
+    }
+
+    /** Removes the first [length] characters (the part that was uploaded) from the pending file. */
+    fun markUploaded(length: Int) = synchronized(lock) {
+        try {
+            pending?.takeIf { it.exists() }?.let { it.writeText(it.readText().drop(length)) }
+        } catch (e: IOException) {
+        }
+        Unit
     }
 
     fun clear() = synchronized(lock) {

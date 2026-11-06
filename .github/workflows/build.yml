@@ -16,6 +16,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # Optional: lets test builds post their logs to this repo's issues. Masked in the build log.
+      LOG_UPLOAD_TOKEN: ${{ secrets.LOG_UPLOAD_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
