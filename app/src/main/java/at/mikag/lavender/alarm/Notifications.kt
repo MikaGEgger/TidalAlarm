@@ -84,8 +84,8 @@ object Notifications {
         alarm?.label?.takeIf { it.isNotBlank() } ?: context.getString(R.string.alarm_default_label)
 
     /** The foreground-service notification while ringing. Its full-screen intent shows the ringing screen. */
-    fun ringing(context: Context, alarm: Alarm?, detail: String?): Notification =
-        Notification.Builder(context, CHANNEL_RINGING)
+    fun ringing(context: Context, alarm: Alarm?, detail: String?): Notification {
+        val builder = Notification.Builder(context, CHANNEL_RINGING)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title(context, alarm))
             .setContentText(detail ?: Format.time(context, System.currentTimeMillis()))
@@ -99,7 +99,12 @@ object Notifications {
             .setFullScreenIntent(ringingScreen(context, 1), true)
             .addAction(action(context, R.string.action_snooze, serviceAction(context, AlarmService.ACTION_SNOOZE, 1)))
             .addAction(action(context, R.string.action_dismiss, serviceAction(context, AlarmService.ACTION_DISMISS, 2)))
-            .build()
+        // When the phone is in use Android shows only this pop-up; opening the ringing screen starts TIDAL.
+        if (alarm?.tidalItem != null) {
+            builder.addAction(action(context, R.string.action_play_music, ringingScreen(context, 3)))
+        }
+        return builder.build()
+    }
 
     /**
      * Brings the ringing screen back in front of TIDAL. Posting a fresh full-screen notification is the

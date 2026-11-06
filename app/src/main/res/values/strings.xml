@@ -23,6 +23,9 @@
     <string name="action_undo">Undo</string>
     <string name="action_use">Use</string>
     <string name="action_allow">Allow</string>
+    <string name="action_play_music">Play music</string>
+    <string name="overlay_prompt_title">Start your TIDAL music every time</string>
+    <string name="overlay_prompt_text">If the phone is unlocked or in use when an alarm goes off, Android only shows a small pop-up. Lavender then isn\'t allowed to start TIDAL, and the chime plays instead. Allow \"Display over other apps\" for Lavender, and your music starts every time.</string>
     <string name="action_later">Later</string>
     <string name="action_refresh">Refresh</string>
     <string name="action_copy">Copy</string>

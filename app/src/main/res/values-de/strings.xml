@@ -22,6 +22,9 @@
     <string name="action_undo">Rückgängig</string>
     <string name="action_use">Verwenden</string>
     <string name="action_allow">Erlauben</string>
+    <string name="action_play_music">Musik abspielen</string>
+    <string name="overlay_prompt_title">TIDAL-Musik jedes Mal starten</string>
+    <string name="overlay_prompt_text">Ist das Handy entsperrt oder in Benutzung, wenn ein Wecker klingelt, zeigt Android nur eine kleine Einblendung. Dann darf Lavender TIDAL nicht starten, und es klingelt der Ersatzton. Erlaube „Über anderen Apps einblenden“ für Lavender, dann startet deine Musik jedes Mal.</string>
     <string name="action_later">Später</string>
     <string name="action_refresh">Aktualisieren</string>
     <string name="action_copy">Kopieren</string>
