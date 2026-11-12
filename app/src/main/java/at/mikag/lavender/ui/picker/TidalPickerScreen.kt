@@ -265,7 +265,7 @@ private fun LibraryList(vm: TidalPickerViewModel, tab: TidalPickerViewModel.Tab,
                 supportingContent = {
                     val text = when (item.type) {
                         TidalItem.Type.PLAYLIST -> item.subtitle?.toIntOrNull()?.let { stringResource(R.string.picker_tracks_count, it) }
-                        TidalItem.Type.TRACK -> item.subtitle
+                        TidalItem.Type.TRACK, TidalItem.Type.MY_SONGS -> item.subtitle
                     }
                     if (text != null) Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 },
