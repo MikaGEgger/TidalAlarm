@@ -181,6 +181,9 @@
     <string name="xiaomi_state_unknown">can\'t check</string>
     <string name="action_xiaomi_done">I\'ve allowed it</string>
     <string name="action_open_settings">Open settings</string>
+    <string name="action_app_info">App info</string>
+    <string name="restricted_hint">Switch greyed out, or Android says \"restricted setting\"? Since Android 15 that\'s normal for apps not installed from a store: try switching it on once, then open App info → ⋮ (top right) → Allow restricted settings, and switch it on again.</string>
+    <string name="restricted_app_info_text">Here: ⋮ (top right) → Allow restricted settings</string>
     <string name="reliability_battery">Battery: unrestricted</string>
     <string name="reliability_battery_text">Recommended. Some phones stop apps in the background; open App info → Battery → Unrestricted.</string>
     <string name="reliability_phone_tips">Tips for %1$s phones</string>

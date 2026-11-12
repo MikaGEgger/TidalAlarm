@@ -349,17 +349,29 @@ private fun PermissionPrompt(status: Reliability.Status, onDismiss: () -> Unit) 
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.permission_prompt_title)) },
         text = {
-            Text(stringResource(R.string.permission_prompt_text, missing.joinToString(", ")))
+            Column {
+                Text(stringResource(R.string.permission_prompt_text, missing.joinToString(", ")))
+                // Android 15+ greys out "Display over other apps" for apps not installed from a store.
+                if (!status.overlay && android.os.Build.VERSION.SDK_INT >= 33) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(stringResource(R.string.restricted_hint), style = MaterialTheme.typography.bodySmall)
+                }
+            }
         },
         confirmButton = {
-            TextButton(onClick = {
-                when {
-                    !status.notifications -> Reliability.openNotificationSettings(context)
-                    !status.fullScreen -> Reliability.openFullScreenSettings(context)
-                    !status.exactAlarms -> Reliability.openExactAlarmSettings(context)
-                    else -> Reliability.openOverlaySettings(context)
+            Row {
+                if (!status.overlay && android.os.Build.VERSION.SDK_INT >= 33) {
+                    TextButton(onClick = { Reliability.openAppDetails(context) }) { Text(stringResource(R.string.action_app_info)) }
                 }
-            }) { Text(stringResource(R.string.action_allow)) }
+                TextButton(onClick = {
+                    when {
+                        !status.notifications -> Reliability.openNotificationSettings(context)
+                        !status.fullScreen -> Reliability.openFullScreenSettings(context)
+                        !status.exactAlarms -> Reliability.openExactAlarmSettings(context)
+                        else -> Reliability.openOverlaySettings(context)
+                    }
+                }) { Text(stringResource(R.string.action_allow)) }
+            }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_later)) } },
     )

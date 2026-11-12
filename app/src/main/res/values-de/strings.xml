@@ -180,6 +180,9 @@
     <string name="xiaomi_state_unknown">nicht prüfbar</string>
     <string name="action_xiaomi_done">Habe ich erlaubt</string>
     <string name="action_open_settings">Einstellungen öffnen</string>
+    <string name="action_app_info">App-Info</string>
+    <string name="restricted_hint">Schalter grau oder meldet Android „eingeschränkte Einstellung“? Seit Android 15 ist das normal bei Apps, die nicht aus einem Store kommen: Versuche einmal, ihn einzuschalten, öffne dann App-Info → ⋮ (oben rechts) → Eingeschränkte Einstellungen zulassen, und schalte ihn erneut ein.</string>
+    <string name="restricted_app_info_text">Hier: ⋮ (oben rechts) → Eingeschränkte Einstellungen zulassen</string>
     <string name="reliability_battery">Akku: nicht eingeschränkt</string>
     <string name="reliability_battery_text">Empfohlen. Manche Handys stoppen Apps im Hintergrund; öffne App-Info → Akku → Nicht eingeschränkt.</string>
     <string name="reliability_phone_tips">Tipps für %1$s-Handys</string>

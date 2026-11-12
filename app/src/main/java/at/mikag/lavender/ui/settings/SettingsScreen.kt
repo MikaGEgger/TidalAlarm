@@ -270,9 +270,17 @@ fun SettingsScreen(onBack: () -> Unit, onOpenLog: () -> Unit) {
             StatusRow(
                 ok = reliability.overlay,
                 title = stringResource(R.string.reliability_overlay),
-                text = stringResource(R.string.reliability_overlay_text),
+                text = stringResource(R.string.reliability_overlay_text) +
+                    if (!reliability.overlay && Build.VERSION.SDK_INT >= 33) "\n\n" + stringResource(R.string.restricted_hint) else "",
                 onClick = { Reliability.openOverlaySettings(context) },
             )
+            if (!reliability.overlay && Build.VERSION.SDK_INT >= 33) {
+                SettingRow(
+                    stringResource(R.string.action_app_info),
+                    stringResource(R.string.restricted_app_info_text),
+                    onClick = { Reliability.openAppDetails(context) },
+                )
+            }
             if (Reliability.isXiaomi) {
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.reliability_xiaomi)) },
