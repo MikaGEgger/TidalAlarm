@@ -47,9 +47,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp app/build/outputs/apk/debug/app-debug.apk lavender.apk
+          VERSION_CODE=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
+          VERSION_NAME=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
           gh release delete latest-build --yes --cleanup-tag || true
+          # The app's update check reads versionCode from these notes.
           gh release create latest-build lavender.apk \
             --prerelease \
             --target "$GITHUB_SHA" \
-            --title "Lavender (latest build)" \
-            --notes "Built from $GITHUB_SHA. Install over the previous version; alarms are kept."
+            --title "Lavender $VERSION_NAME ($VERSION_CODE)" \
+            --notes "versionCode: $VERSION_CODE
+          versionName: $VERSION_NAME
+          commit: $GITHUB_SHA
+
+          Install over the previous version; alarms are kept."

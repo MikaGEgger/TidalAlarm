@@ -50,6 +50,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -85,6 +86,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import at.mikag.lavender.Updater
+import androidx.compose.material3.Button
+import androidx.compose.material3.LinearProgressIndicator
 
 class AlarmListViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = app.container.alarms
@@ -145,6 +149,10 @@ fun AlarmListScreen(onOpenAlarm: (Long) -> Unit, onOpenSettings: () -> Unit) {
     val alarms by vm.alarms.collectAsStateWithLifecycle()
     val settings by vm.settings.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val update by Updater.state.collectAsStateWithLifecycle()
+    // Test builds: look for a newer build whenever the app comes to the front (at most every 30 minutes).
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { scope.launch { Updater.check(context) } }
     var showTimePicker by remember { mutableStateOf(false) }
     var reliability by remember { mutableStateOf(Reliability.check(context)) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { reliability = Reliability.check(context) }
@@ -199,6 +207,12 @@ fun AlarmListScreen(onOpenAlarm: (Long) -> Unit, onOpenSettings: () -> Unit) {
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            val pending = update
+            if (pending is Updater.State.Available || pending is Updater.State.Downloading) {
+                item {
+                    UpdateBanner(pending, onInstall = { release -> scope.launch { Updater.downloadAndInstall(context, release) } })
+                }
+            }
             if (!reliability.critical) {
                 item { ReliabilityBanner(onClick = onOpenSettings) }
             }
@@ -248,6 +262,36 @@ fun AlarmListScreen(onOpenAlarm: (Long) -> Unit, onOpenSettings: () -> Unit) {
             },
             onDismiss = { showTimePicker = false },
         )
+    }
+}
+
+/** Test builds: a newer build is on GitHub. */
+@Composable
+private fun UpdateBanner(state: Updater.State, onInstall: (Updater.Release) -> Unit) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp)) {
+            when (state) {
+                is Updater.State.Available -> {
+                    Text(
+                        stringResource(R.string.update_available, state.release.title),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Button(onClick = { onInstall(state.release) }) { Text(stringResource(R.string.action_install)) }
+                }
+                is Updater.State.Downloading -> {
+                    Text(
+                        stringResource(R.string.update_downloading, state.percent),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    LinearProgressIndicator(progress = { state.percent / 100f }, modifier = Modifier.fillMaxWidth())
+                }
+                else -> Unit
+            }
+        }
     }
 }
 

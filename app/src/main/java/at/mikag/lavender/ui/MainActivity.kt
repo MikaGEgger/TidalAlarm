@@ -37,6 +37,7 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState == null) {
             // Force-stopping an app deletes its alarms in Android; opening the app restores them.
             lifecycleScope.launch { container.alarms.rescheduleAll(reportMissed = false) }
+            at.mikag.lavender.Updater.scheduleBackgroundChecks(this)
         }
         setContent {
             val settings by container.settings.settings.collectAsStateWithLifecycle(initialValue = AppSettings())

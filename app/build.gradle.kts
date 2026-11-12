@@ -14,8 +14,8 @@ android {
         applicationId = "at.mikag.lavender"
         minSdk = 26
         targetSdk = 36
-        versionCode = 8
-        versionName = "0.5.0"
+        versionCode = 9
+        versionName = "0.6.0"
 
         val clientId = (project.findProperty("tidalClientId") as String?).orEmpty().trim()
         buildConfigField("String", "TIDAL_CLIENT_ID", "\"$clientId\"")
@@ -44,12 +44,15 @@ android {
         debug {
             signingConfig = signingConfigs.getByName("dev")
             buildConfigField("String", "LOG_UPLOAD_TOKEN", "\"$logUploadToken\"")
+            // Test builds check the repo's latest-build release and offer to install it (same token).
+            buildConfigField("boolean", "SELF_UPDATE", "${logUploadToken.isNotBlank()}")
         }
         release {
             isMinifyEnabled = false
             signingConfig = signingConfigs.getByName("dev")
-            // Play Store builds never send logs anywhere.
+            // Play Store builds never send logs anywhere, and never install anything themselves.
             buildConfigField("String", "LOG_UPLOAD_TOKEN", "\"\"")
+            buildConfigField("boolean", "SELF_UPDATE", "false")
         }
     }
 

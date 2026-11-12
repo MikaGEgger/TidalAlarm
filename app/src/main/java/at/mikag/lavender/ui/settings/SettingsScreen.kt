@@ -68,6 +68,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import at.mikag.lavender.Updater
+import androidx.compose.runtime.rememberCoroutineScope
 
 class SettingsViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = app.container.settings
@@ -282,6 +284,29 @@ fun SettingsScreen(onBack: () -> Unit, onOpenLog: () -> Unit) {
             )
 
             SectionTitle(stringResource(R.string.settings_developer))
+            val updateScope = rememberCoroutineScope()
+            val update by Updater.state.collectAsStateWithLifecycle()
+            val current = update
+            SettingRow(
+                stringResource(R.string.settings_updates),
+                when {
+                    !Updater.isEnabled -> stringResource(R.string.settings_auto_send_off_build)
+                    current is Updater.State.Checking -> stringResource(R.string.update_checking)
+                    current is Updater.State.UpToDate -> stringResource(R.string.update_up_to_date, BuildConfig.VERSION_NAME)
+                    current is Updater.State.Available -> stringResource(R.string.update_available, current.release.title)
+                    current is Updater.State.Downloading -> stringResource(R.string.update_downloading, current.percent)
+                    current is Updater.State.Failed -> current.message
+                    else -> stringResource(R.string.update_tap_to_check, BuildConfig.VERSION_NAME)
+                },
+                onClick = {
+                    if (Updater.isEnabled) {
+                        updateScope.launch {
+                            val result = Updater.check(context, force = true)
+                            if (result is Updater.State.Available) Updater.downloadAndInstall(context, result.release)
+                        }
+                    }
+                },
+            )
             val lastSent = at.mikag.lavender.LogUpload.lastSent(context)
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_auto_send_logs)) },
