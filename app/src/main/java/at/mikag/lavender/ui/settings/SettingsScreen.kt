@@ -112,7 +112,11 @@ fun SettingsScreen(onBack: () -> Unit, onOpenLog: () -> Unit) {
     val writeAccess by vm.writeAccess.collectAsStateWithLifecycle()
     var dialog by remember { mutableStateOf<Dialog?>(null) }
     var reliability by remember { mutableStateOf(Reliability.check(context)) }
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { reliability = Reliability.check(context) }
+    var xiaomi by remember { mutableStateOf(Reliability.xiaomiStatus(context)) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        reliability = Reliability.check(context)
+        xiaomi = Reliability.xiaomiStatus(context)
+    }
 
     Scaffold(
         topBar = {
@@ -270,10 +274,35 @@ fun SettingsScreen(onBack: () -> Unit, onOpenLog: () -> Unit) {
                 onClick = { Reliability.openOverlaySettings(context) },
             )
             if (Reliability.isXiaomi) {
-                SettingRow(
-                    stringResource(R.string.reliability_xiaomi),
-                    stringResource(R.string.reliability_xiaomi_text),
-                    onClick = { Reliability.openXiaomiPermissions(context) },
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.reliability_xiaomi)) },
+                    supportingContent = {
+                        Column {
+                            Text(stringResource(R.string.reliability_xiaomi_text))
+                            Text(
+                                at.mikag.lavender.ui.alarms.xiaomiStatusText(xiaomi),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    },
+                    leadingContent = {
+                        val ok = xiaomi.allAllowed || settings.xiaomiConfirmed
+                        Icon(
+                            if (ok) Icons.Filled.CheckCircle else Icons.Filled.ErrorOutline,
+                            contentDescription = null,
+                            tint = if (ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        )
+                    },
+                    trailingContent = {
+                        // "I've allowed both": for phones where Lavender can't read Xiaomi's switches.
+                        androidx.compose.material3.Switch(
+                            checked = settings.xiaomiConfirmed,
+                            onCheckedChange = { on -> vm.update { it.copy(xiaomiConfirmed = on) } },
+                        )
+                    },
+                    modifier = Modifier.clickable { Reliability.openXiaomiPermissions(context) },
+                    colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
                 )
             }
             StatusRow(

@@ -132,6 +132,8 @@ class AlarmListViewModel(app: Application) : AndroidViewModel(app) {
         _messages.emit(Message.Deleted(alarm))
     }
 
+    fun confirmXiaomi() = viewModelScope.launch { settingsRepo.update { it.copy(xiaomiConfirmed = true) } }
+
     fun restore(alarm: Alarm) = viewModelScope.launch {
         // Its wake-up playlist was deleted with it; the restored alarm gets a new one.
         val restored = repo.create(
@@ -155,7 +157,12 @@ fun AlarmListScreen(onOpenAlarm: (Long) -> Unit, onOpenSettings: () -> Unit) {
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { scope.launch { Updater.check(context) } }
     var showTimePicker by remember { mutableStateOf(false) }
     var reliability by remember { mutableStateOf(Reliability.check(context)) }
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { reliability = Reliability.check(context) }
+    var xiaomi by remember { mutableStateOf(Reliability.xiaomiStatus(context)) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        reliability = Reliability.check(context)
+        xiaomi = Reliability.xiaomiStatus(context)
+    }
+    var xiaomiPromptDismissed by rememberSaveable { mutableStateOf(false) }
     var permissionPromptDismissed by rememberSaveable { mutableStateOf(false) }
 
     val undoLabel = stringResource(R.string.action_undo)
@@ -234,6 +241,15 @@ fun AlarmListScreen(onOpenAlarm: (Long) -> Unit, onOpenSettings: () -> Unit) {
 
     if (!reliability.critical && !permissionPromptDismissed) {
         PermissionPrompt(reliability, onDismiss = { permissionPromptDismissed = true })
+    } else if (
+        reliability.critical && Reliability.isXiaomi && !xiaomi.allAllowed && !settings.xiaomiConfirmed && !xiaomiPromptDismissed
+    ) {
+        // After the normal Android permissions: Xiaomi's own two switches.
+        XiaomiPrompt(
+            status = xiaomi,
+            onConfirm = { vm.confirmXiaomi() },
+            onDismiss = { xiaomiPromptDismissed = true },
+        )
     }
 
     if (showTimePicker) {
@@ -278,6 +294,45 @@ private fun UpdateBanner(state: Updater.State, onInstall: (Updater.Release) -> U
             }
         }
     }
+}
+
+/** Xiaomi phones block alarm screens with two switches of their own, which Android can't ask for. */
+@Composable
+private fun XiaomiPrompt(status: Reliability.XiaomiStatus, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.xiaomi_prompt_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.xiaomi_prompt_text))
+                Spacer(Modifier.height(12.dp))
+                Text(xiaomiStatusText(status), style = MaterialTheme.typography.bodySmall)
+            }
+        },
+        confirmButton = {
+            Row {
+                TextButton(onClick = onConfirm) { Text(stringResource(R.string.action_xiaomi_done)) }
+                TextButton(onClick = { Reliability.openXiaomiPermissions(context) }) {
+                    Text(stringResource(R.string.action_open_settings))
+                }
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_later)) } },
+    )
+}
+
+@Composable
+fun xiaomiStatusText(status: Reliability.XiaomiStatus): String {
+    @Composable
+    fun state(value: Boolean?) = stringResource(
+        when (value) {
+            true -> R.string.xiaomi_state_allowed
+            false -> R.string.xiaomi_state_denied
+            null -> R.string.xiaomi_state_unknown
+        }
+    )
+    return stringResource(R.string.xiaomi_status, state(status.backgroundPopups), state(status.lockScreen))
 }
 
 /** Missing permissions mean silent alarms, so ask clearly instead of only showing a banner. */

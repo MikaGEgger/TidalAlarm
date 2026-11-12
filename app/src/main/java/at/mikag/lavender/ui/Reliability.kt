@@ -2,6 +2,7 @@ package at.mikag.lavender.ui
 
 import android.Manifest
 import android.app.AlarmManager
+import android.app.AppOpsManager
 import android.app.NotificationManager
 import android.content.ActivityNotFoundException
 import android.content.Context
@@ -10,6 +11,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
+import android.os.Process
 import android.provider.Settings
 import java.util.Locale
 
@@ -75,6 +77,35 @@ object Reliability {
     /** Xiaomi/Redmi/POCO (MIUI, HyperOS) have their own switch for apps opening screens in the background. */
     val isXiaomi: Boolean
         get() = listOf(Build.MANUFACTURER, Build.BRAND).any { it.lowercase(Locale.ROOT) in setOf("xiaomi", "redmi", "poco") }
+
+    /**
+     * Xiaomi's own switches, read through its app-op codes (10021 "Display pop-up windows while running in
+     * the background", 10020 "Show on Lock screen"). Unofficial, so: true/false when the phone answers,
+     * null when it can't be told. Not a Xiaomi phone: always true.
+     */
+    data class XiaomiStatus(val backgroundPopups: Boolean?, val lockScreen: Boolean?) {
+        val allAllowed: Boolean get() = backgroundPopups == true && lockScreen == true
+        val anyDenied: Boolean get() = backgroundPopups == false || lockScreen == false
+    }
+
+    fun xiaomiStatus(context: Context): XiaomiStatus {
+        if (!isXiaomi) return XiaomiStatus(true, true)
+        return XiaomiStatus(xiaomiOp(context, 10021), xiaomiOp(context, 10020))
+    }
+
+    private fun xiaomiOp(context: Context, op: Int): Boolean? = try {
+        val ops = context.getSystemService(AppOpsManager::class.java)
+        val check = AppOpsManager::class.java.getMethod(
+            "checkOpNoThrow", Int::class.javaPrimitiveType, Int::class.javaPrimitiveType, String::class.java,
+        )
+        when (check.invoke(ops, op, Process.myUid(), context.packageName) as Int) {
+            AppOpsManager.MODE_ALLOWED -> true
+            AppOpsManager.MODE_IGNORED, AppOpsManager.MODE_ERRORED -> false
+            else -> null
+        }
+    } catch (e: Exception) {
+        null
+    }
 
     /** Opens Xiaomi's per-app permission list ("Other permissions"), else the normal app info. */
     fun openXiaomiPermissions(context: Context) {

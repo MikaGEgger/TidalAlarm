@@ -34,6 +34,8 @@ data class AppSettings(
     val timeFormat: TimeFormat = TimeFormat.H24,
     /** Test builds: send the log to the project's GitHub repo after each alarm. */
     val autoSendLogs: Boolean = true,
+    /** Xiaomi: the user confirmed allowing background pop-ups and the lock screen (in case the check can't tell). */
+    val xiaomiConfirmed: Boolean = false,
 )
 
 class SettingsRepository(context: Context) {
@@ -52,6 +54,7 @@ class SettingsRepository(context: Context) {
             weekStart = prefs[WEEK_START].toEnum(WeekStart.SYSTEM),
             timeFormat = prefs[TIME_FORMAT].toEnum(TimeFormat.H24),
             autoSendLogs = prefs[AUTO_SEND_LOGS] ?: true,
+            xiaomiConfirmed = prefs[XIAOMI_CONFIRMED] ?: false,
         )
     }
 
@@ -68,6 +71,7 @@ class SettingsRepository(context: Context) {
                 weekStart = prefs[WEEK_START].toEnum(WeekStart.SYSTEM),
                 timeFormat = prefs[TIME_FORMAT].toEnum(TimeFormat.H24),
                 autoSendLogs = prefs[AUTO_SEND_LOGS] ?: true,
+                xiaomiConfirmed = prefs[XIAOMI_CONFIRMED] ?: false,
             )
             val next = change(now)
             prefs[THEME] = next.theme.name
@@ -78,6 +82,7 @@ class SettingsRepository(context: Context) {
             prefs[WEEK_START] = next.weekStart.name
             prefs[TIME_FORMAT] = next.timeFormat.name
             prefs[AUTO_SEND_LOGS] = next.autoSendLogs
+            prefs[XIAOMI_CONFIRMED] = next.xiaomiConfirmed
         }
     }
 
@@ -93,5 +98,6 @@ class SettingsRepository(context: Context) {
         val WEEK_START = stringPreferencesKey("week_start")
         val TIME_FORMAT = stringPreferencesKey("time_format")
         val AUTO_SEND_LOGS = booleanPreferencesKey("auto_send_logs")
+        val XIAOMI_CONFIRMED = booleanPreferencesKey("xiaomi_confirmed")
     }
 }

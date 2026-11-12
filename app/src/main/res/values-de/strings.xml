@@ -171,7 +171,15 @@
     <string name="reliability_overlay">Über anderen Apps einblenden</string>
     <string name="reliability_overlay_text">Nötig, damit der Wecker bei entsperrtem Handy im Vollbild erscheint (statt einer kleinen Einblendung) und wieder vor TIDAL kommt.</string>
     <string name="reliability_xiaomi">Xiaomi: Einblendungen im Hintergrund</string>
-    <string name="reliability_xiaomi_text">Auf Xiaomi-Handys zusätzlich „Pop-up-Fenster anzeigen, während im Hintergrund ausgeführt“ und „Auf Sperrbildschirm anzeigen“ für Lavender erlauben. Tippe, um die Liste zu öffnen.</string>
+    <string name="reliability_xiaomi_text">„Pop-up-Fenster anzeigen, während im Hintergrund ausgeführt“ und „Auf Sperrbildschirm anzeigen“ für Lavender erlauben. Tippe, um die Liste zu öffnen; schalte ein, wenn beides erlaubt ist.</string>
+    <string name="xiaomi_prompt_title">Noch ein Schritt auf Xiaomi</string>
+    <string name="xiaomi_prompt_text">Xiaomi-Handys haben zwei zusätzliche Schalter, die den Weckbildschirm verhindern können. Erlaube in der Liste, die sich öffnet, für Lavender „Pop-up-Fenster anzeigen, während im Hintergrund ausgeführt“ und „Auf Sperrbildschirm anzeigen“.</string>
+    <string name="xiaomi_status">Einblendungen im Hintergrund: %1$s · Sperrbildschirm: %2$s</string>
+    <string name="xiaomi_state_allowed">erlaubt</string>
+    <string name="xiaomi_state_denied">nicht erlaubt</string>
+    <string name="xiaomi_state_unknown">nicht prüfbar</string>
+    <string name="action_xiaomi_done">Habe ich erlaubt</string>
+    <string name="action_open_settings">Einstellungen öffnen</string>
     <string name="reliability_battery">Akku: nicht eingeschränkt</string>
     <string name="reliability_battery_text">Empfohlen. Manche Handys stoppen Apps im Hintergrund; öffne App-Info → Akku → Nicht eingeschränkt.</string>
     <string name="reliability_phone_tips">Tipps für %1$s-Handys</string>

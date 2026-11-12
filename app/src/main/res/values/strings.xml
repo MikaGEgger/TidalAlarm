@@ -172,7 +172,15 @@
     <string name="reliability_overlay">Display over other apps</string>
     <string name="reliability_overlay_text">Needed so the alarm shows full screen when the phone is unlocked (instead of a small pop-up), and comes back in front of TIDAL.</string>
     <string name="reliability_xiaomi">Xiaomi: pop-ups in the background</string>
-    <string name="reliability_xiaomi_text">On Xiaomi phones, also allow \"Display pop-up windows while running in the background\" and \"Show on Lock screen\" for Lavender. Tap to open the list.</string>
+    <string name="reliability_xiaomi_text">Allow \"Display pop-up windows while running in the background\" and \"Show on Lock screen\" for Lavender. Tap to open the list; switch on when both are allowed.</string>
+    <string name="xiaomi_prompt_title">One more step on Xiaomi</string>
+    <string name="xiaomi_prompt_text">Xiaomi phones have two extra switches that can stop the alarm screen from appearing. In the list that opens, allow \"Display pop-up windows while running in the background\" and \"Show on Lock screen\" for Lavender.</string>
+    <string name="xiaomi_status">Pop-ups in the background: %1$s · Lock screen: %2$s</string>
+    <string name="xiaomi_state_allowed">allowed</string>
+    <string name="xiaomi_state_denied">not allowed</string>
+    <string name="xiaomi_state_unknown">can\'t check</string>
+    <string name="action_xiaomi_done">I\'ve allowed it</string>
+    <string name="action_open_settings">Open settings</string>
     <string name="reliability_battery">Battery: unrestricted</string>
     <string name="reliability_battery_text">Recommended. Some phones stop apps in the background; open App info → Battery → Unrestricted.</string>
     <string name="reliability_phone_tips">Tips for %1$s phones</string>

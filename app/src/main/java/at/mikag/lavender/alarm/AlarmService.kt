@@ -165,7 +165,8 @@ class AlarmService : Service() {
                 " userUnlocked=${getSystemService(UserManager::class.java).isUserUnlocked}" +
                 " | tidalInstalled=${TidalLauncher.isInstalled(this)} music=${alarm.tidalItem?.let { "${it.type.path}/${it.id}" }}" +
                 " volume=${alarm.volumePercent}% ramp=${alarm.rampSeconds}s" +
-                " displayOverOtherApps=${Settings.canDrawOverlays(this)}",
+                " displayOverOtherApps=${Settings.canDrawOverlays(this)}" +
+                if (at.mikag.lavender.ui.Reliability.isXiaomi) " xiaomi=${at.mikag.lavender.ui.Reliability.xiaomiStatus(this)}" else "",
         )
     }
 
