@@ -1,6 +1,6 @@
 # Privacy policy for Lavender
 
-_Last updated: 4 November 2026_
+_Last updated: 12 November 2026_
 
 Lavender is an alarm clock app for Android. This policy explains what data Lavender handles.
 
@@ -11,7 +11,7 @@ Lavender is an alarm clock app for Android. This policy explains what data Laven
 
 ## What Lavender sends, and to whom
 
-- **TIDAL**, only if you choose to log in: Lavender uses TIDAL's official login (login.tidal.com) and reads your playlists and favorite tracks from TIDAL's API (openapi.tidal.com) so you can pick them for an alarm. It asks only for read access (`user.read`, `collection.read`, `playlists.read`). It never changes anything in your TIDAL account. TIDAL's own privacy policy applies to that data: https://tidal.com/privacy
+- **TIDAL**, only if you choose to log in: Lavender uses TIDAL's official login (login.tidal.com) and reads your playlists and favorite tracks from TIDAL's API (openapi.tidal.com) so you can pick them for an alarm. It asks for read access (`user.read`, `collection.read`, `playlists.read`) and for `playlists.write`. Lavender uses write access only for its own "wake-up playlists": when an alarm should shuffle or play your liked songs, Lavender keeps one unlisted playlist per alarm (named "Lavender · …") in your account and refills it after each alarm. It never changes your other playlists or your liked songs, and deleting the alarm deletes its wake-up playlist. TIDAL's own privacy policy applies to that data: https://tidal.com/privacy
 - **Cover images** for playlists and tracks are loaded from TIDAL's image servers.
 
 Lavender has no servers of its own, no analytics, no advertising and no tracking. Nothing is sold or shared with anyone else.

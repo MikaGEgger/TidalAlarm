@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -120,9 +121,16 @@ class TidalPickerViewModel(app: Application, private val alarmId: Long) : Androi
     }
 
     fun choose(item: TidalItem, onDone: () -> Unit) = viewModelScope.launch {
-        repo.edit(alarmId) { it.withTidal(item) }
+        // A single track can't be shuffled; keep the switch for playlists and My songs.
+        val saved = repo.edit(alarmId) { it.withTidal(item).copy(shuffle = it.shuffle && item.type != TidalItem.Type.TRACK) }
+        saved?.let { at.mikag.lavender.tidal.WakeupPlaylists.prepare(getApplication(), it.id) }
         onDone()
     }
+
+    fun chooseMySongs(onDone: () -> Unit) = choose(
+        TidalItem(TidalItem.Type.MY_SONGS, "me", getApplication<Application>().getString(R.string.my_songs)),
+        onDone,
+    )
 
     /** A pasted (or shared) TIDAL link. With a login, its name is looked up; without, a generic name is used. */
     fun useLink(text: String, onDone: () -> Unit) = viewModelScope.launch {
@@ -203,6 +211,20 @@ fun TidalPickerScreen(alarmId: Long, onDone: () -> Unit) {
                 !vm.configured -> InfoCard(stringResource(R.string.picker_not_configured), error = true)
                 !loggedIn -> LoginCard(onLogin = { vm.login(context) })
                 else -> {
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.my_songs)) },
+                        supportingContent = { Text(stringResource(R.string.my_songs_text)) },
+                        leadingContent = {
+                            Icon(
+                                Icons.Filled.Favorite,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(52.dp).padding(12.dp),
+                            )
+                        },
+                        modifier = Modifier.clickable { vm.chooseMySongs(onDone) },
+                        colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                    )
                     TabRow(selectedTabIndex = tab.ordinal) {
                         Tab(
                             selected = tab == TidalPickerViewModel.Tab.PLAYLISTS,

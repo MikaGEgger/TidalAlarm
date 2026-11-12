@@ -85,6 +85,13 @@
     <string name="editor_music_none">None. Tap to pick a playlist or track.</string>
     <string name="editor_tidal_missing">The TIDAL app isn\'t installed: the backup sound will ring.</string>
     <string name="editor_overlay_tip">Tip: allow \"Display over other apps\" so Snooze and Dismiss come back in front of TIDAL. Tap to open the setting.</string>
+    <string name="editor_shuffle">Shuffle</string>
+    <string name="wakeup_login_needed">Log in to TIDAL to use shuffle and My songs.</string>
+    <string name="wakeup_relogin_needed">Log in to TIDAL once more, so Lavender may create its wake-up playlist (needed for shuffle and My songs).</string>
+    <string name="wakeup_preparing">Preparing the wake-up playlist in TIDAL …</string>
+    <string name="wakeup_ready">Wake-up playlist ready: %1$d songs, updated %2$s. Lavender picks new songs after each alarm.</string>
+    <string name="my_songs">My songs</string>
+    <string name="my_songs_text">All tracks you liked in TIDAL</string>
     <string name="editor_backup_sound">Backup sound</string>
     <string name="editor_alarm_sound">Alarm sound</string>
     <string name="editor_sound_explainer">Lavender\'s chime always works, even right after a restart. A sound from your phone may not be available before you first unlock it; then the chime plays instead.</string>
@@ -154,6 +161,9 @@
     <string name="settings_tidal_app_text">The music plays in the TIDAL app, with your TIDAL subscription.</string>
     <string name="settings_tidal_logged_in">Logged in to TIDAL</string>
     <string name="settings_tidal_logged_out">Not logged in to TIDAL</string>
+    <string name="settings_tidal_relogin">Log in again</string>
+    <string name="settings_tidal_relogin_text">Needed once for shuffle and My songs: allows Lavender to create its wake-up playlists.</string>
+    <string name="settings_tidal_wakeup_note">For shuffle and My songs, Lavender keeps one unlisted playlist per alarm in your TIDAL account (named \"Lavender · …\") and refills it after each alarm. Deleting the alarm deletes the playlist.</string>
     <string name="settings_reliability">Reliability</string>
     <string name="reliability_notifications">Notifications</string>
     <string name="reliability_notifications_text">Needed to ring and show Snooze/Dismiss.</string>

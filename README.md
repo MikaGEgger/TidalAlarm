@@ -27,6 +27,7 @@ Every push to `main` builds an APK on GitHub Actions and publishes it as the **l
 | Ringing screen over the lock screen | `ui/ringing/RingingActivity.kt` |
 | Starting TIDAL with "play" links | `tidal/TidalLauncher.kt` |
 | TIDAL login (OAuth PKCE) and library | `tidal/TidalAuth.kt`, `tidal/TidalApi.kt` |
+| Shuffle and My songs: wake-up playlists filled before each alarm | `tidal/WakeupPlaylists.kt` |
 | Themes (Lavender + 7 flag themes) | `ui/theme/Theme.kt` |
 
 ### Why TIDAL is started this way

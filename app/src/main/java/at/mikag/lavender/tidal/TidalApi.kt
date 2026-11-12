@@ -7,6 +7,11 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.addJsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
+import kotlinx.serialization.json.putJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
@@ -14,6 +19,8 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.Locale
@@ -110,7 +117,17 @@ class TidalApi(private val http: OkHttpClient, private val auth: TidalAuth) {
         throw last ?: ApiException(400, "Bad request")
     }
 
-    private suspend fun get(path: String, include: List<String>, cursor: String?, params: Map<String, String>): JsonObject {
+    private suspend fun get(path: String, include: List<String>, cursor: String?, params: Map<String, String>): JsonObject =
+        call("GET", path, include, cursor, params, body = null)
+
+    private suspend fun call(
+        method: String,
+        path: String,
+        include: List<String> = emptyList(),
+        cursor: String? = null,
+        params: Map<String, String> = emptyMap(),
+        body: String? = null,
+    ): JsonObject {
         val url: HttpUrl = "$BASE/$path".toHttpUrl().newBuilder().apply {
             include.forEach { addQueryParameter("include", it) }
             params.forEach { (k, v) -> addQueryParameter(k, v) }
@@ -123,6 +140,7 @@ class TidalApi(private val http: OkHttpClient, private val auth: TidalAuth) {
                     .url(url)
                     .header("Authorization", "Bearer $token")
                     .header("Accept", "application/vnd.api+json")
+                    .method(method, body?.toRequestBody(JSON_API))
                     .build()
                 http.newCall(request).execute().use { response ->
                     val text = response.body?.string().orEmpty()
@@ -131,14 +149,110 @@ class TidalApi(private val http: OkHttpClient, private val auth: TidalAuth) {
                         return@use
                     }
                     if (!response.isSuccessful) {
-                        AppLog.w("Tidal", "API $path -> ${response.code}: ${text.take(300)}")
+                        AppLog.w("Tidal", "API $method $path -> ${response.code}: ${text.take(300)}")
                         throw ApiException(response.code, "TIDAL: ${response.code} ${text.take(300)}")
                     }
-                    return@withContext json.parseToJsonElement(text).jsonObject
+                    // Changes often answer 204 without a body.
+                    return@withContext if (text.isBlank()) JsonObject(emptyMap()) else json.parseToJsonElement(text).jsonObject
                 }
             }
             throw ApiException(401, "Not logged in")
         }
+    }
+
+    // ---------- Wake-up playlists: reading track lists and writing Lavender's own playlist ----------
+
+    /** One entry of a track list. [itemId] identifies the entry inside a playlist (needed to remove it). */
+    data class ItemRef(val type: String, val id: String, val itemId: String?)
+
+    /** Track ids of a playlist, in playlist order (videos skipped). */
+    suspend fun playlistTrackIds(playlistId: String, max: Int = MAX_SOURCE_TRACKS): List<String> =
+        collect("playlists/$playlistId/relationships/items", max).filter { it.type == "tracks" }.map { it.id }
+
+    /** The user's liked tracks ("My Collection → Tracks"), newest first like in the TIDAL app. */
+    suspend fun likedTrackIds(max: Int = MAX_SOURCE_TRACKS): List<String> =
+        collect("userCollectionTracks/me/relationships/items", max).filter { it.type == "tracks" }.map { it.id }
+
+    suspend fun playlistItems(playlistId: String): List<ItemRef> = collect("playlists/$playlistId/relationships/items", 500)
+
+    private suspend fun collect(path: String, max: Int): List<ItemRef> {
+        val result = mutableListOf<ItemRef>()
+        var cursor: String? = null
+        do {
+            val root = call("GET", path, cursor = cursor)
+            (root["data"] as? JsonArray).orEmpty().forEach { element ->
+                val obj = element.jsonObject
+                val id = obj.string("id") ?: return@forEach
+                val type = obj.string("type") ?: return@forEach
+                result += ItemRef(type, id, obj["meta"]?.jsonObject?.string("itemId"))
+            }
+            cursor = root["links"]?.jsonObject?.get("meta")?.jsonObject?.string("nextCursor")?.takeIf { it.isNotBlank() }
+        } while (cursor != null && result.size < max)
+        return result.take(max)
+    }
+
+    /** Creates an unlisted playlist in the user's account and returns its id. */
+    suspend fun createPlaylist(name: String, description: String): String {
+        val body = buildJsonObject {
+            putJsonObject("data") {
+                put("type", "playlists")
+                putJsonObject("attributes") {
+                    put("name", name.take(250))
+                    put("description", description.take(500))
+                    put("accessType", "UNLISTED")
+                }
+            }
+        }
+        val root = call("POST", "playlists", body = body.toString())
+        return root["data"]?.jsonObject?.string("id") ?: throw ApiException(0, "TIDAL didn't return the new playlist's id")
+    }
+
+    suspend fun renamePlaylist(playlistId: String, name: String) {
+        val body = buildJsonObject {
+            putJsonObject("data") {
+                put("id", playlistId)
+                put("type", "playlists")
+                putJsonObject("attributes") { put("name", name.take(250)) }
+            }
+        }
+        call("PATCH", "playlists/$playlistId", body = body.toString())
+    }
+
+    suspend fun removeItems(playlistId: String, items: List<ItemRef>) {
+        items.filter { it.itemId != null }.chunked(50).forEach { chunk ->
+            val body = buildJsonObject {
+                putJsonArray("data") {
+                    chunk.forEach { item ->
+                        addJsonObject {
+                            put("id", item.id)
+                            put("type", item.type)
+                            putJsonObject("meta") { put("itemId", item.itemId) }
+                        }
+                    }
+                }
+            }
+            call("DELETE", "playlists/$playlistId/relationships/items", body = body.toString())
+        }
+    }
+
+    suspend fun addTracks(playlistId: String, trackIds: List<String>) {
+        trackIds.chunked(50).forEach { chunk ->
+            val body = buildJsonObject {
+                putJsonArray("data") {
+                    chunk.forEach { id ->
+                        addJsonObject {
+                            put("id", id)
+                            put("type", "tracks")
+                        }
+                    }
+                }
+            }
+            call("POST", "playlists/$playlistId/relationships/items", body = body.toString())
+        }
+    }
+
+    suspend fun deletePlaylist(playlistId: String) {
+        call("DELETE", "playlists/$playlistId")
     }
 
     private fun parse(root: JsonObject, map: (JsonObject, Map<String, JsonObject>) -> TidalItem?): Page {
@@ -183,5 +297,9 @@ class TidalApi(private val http: OkHttpClient, private val auth: TidalAuth) {
 
     private companion object {
         const val BASE = "https://openapi.tidal.com/v2"
+        val JSON_API = "application/vnd.api+json".toMediaType()
+
+        /** Enough to shuffle a big library; more would make preparing slow. */
+        const val MAX_SOURCE_TRACKS = 2000
     }
 }

@@ -74,7 +74,9 @@ import at.mikag.lavender.alarm.AlarmService
 import at.mikag.lavender.container
 import at.mikag.lavender.data.Alarm
 import at.mikag.lavender.data.AppSettings
+import at.mikag.lavender.data.TidalItem
 import at.mikag.lavender.tidal.TidalLauncher
+import at.mikag.lavender.tidal.prepareWakeupIfNeeded
 import at.mikag.lavender.ui.Format
 import at.mikag.lavender.ui.Reliability
 import at.mikag.lavender.ui.components.ChoiceDialog
@@ -97,17 +99,24 @@ class AlarmEditorViewModel(app: Application, private val id: Long) : AndroidView
     val alarm: StateFlow<Alarm?> = repo.observe(id).stateIn(viewModelScope, SharingStarted.Eagerly, null)
     val settings: StateFlow<AppSettings> =
         app.container.settings.settings.stateIn(viewModelScope, SharingStarted.Eagerly, AppSettings())
+    private val auth = app.container.tidalAuth
+    val tidalLoggedIn: StateFlow<Boolean> = auth.loggedIn
+    val tidalWriteAccess: StateFlow<Boolean> = auth.writeAccess
 
-    private fun update(change: (Alarm) -> Alarm) {
-        viewModelScope.launch { repo.edit(id, change) }
+    /** [refreshWakeup]: the change affects the wake-up playlist (songs, shuffle, or its name). */
+    private fun update(refreshWakeup: Boolean = false, change: (Alarm) -> Alarm) {
+        viewModelScope.launch {
+            val saved = repo.edit(id, change)
+            if (refreshWakeup) saved?.prepareWakeupIfNeeded(getApplication())
+        }
     }
 
     /** Changing when an alarm rings switches it on, like other alarm apps do. */
-    private fun reschedule(change: (Alarm) -> Alarm) = update {
+    private fun reschedule(refreshWakeup: Boolean = false, change: (Alarm) -> Alarm) = update(refreshWakeup) {
         change(it).copy(enabled = true, skippedOccurrence = null, snoozedUntil = null)
     }
 
-    fun setTime(hour: Int, minute: Int) = reschedule { it.copy(hour = hour, minute = minute) }
+    fun setTime(hour: Int, minute: Int) = reschedule(refreshWakeup = true) { it.copy(hour = hour, minute = minute) }
 
     fun toggleDay(day: DayOfWeek) = reschedule {
         val days = it.days xor Alarm.dayBit(day)
@@ -116,9 +125,26 @@ class AlarmEditorViewModel(app: Application, private val id: Long) : AndroidView
 
     fun setDate(date: LocalDate?) = reschedule { it.copy(dateEpochDay = date?.toEpochDay(), days = 0) }
 
-    fun setLabel(label: String) = update { it.copy(label = label) }
+    fun setLabel(label: String) = update(refreshWakeup = true) { it.copy(label = label) }
 
-    fun clearMusic() = update { it.withTidal(null) }
+    fun clearMusic() = update(refreshWakeup = true) { it.withTidal(null).copy(shuffle = false) }
+
+    fun setShuffle(on: Boolean) = update(refreshWakeup = true) { it.copy(shuffle = on) }
+
+    /** Try preparing again, e.g. after logging in once more. */
+    fun retryWakeup() = update(refreshWakeup = true) { it }
+
+    fun login(context: android.content.Context) {
+        val uri = auth.loginUri()
+        try {
+            androidx.browser.customtabs.CustomTabsIntent.Builder().build().launchUrl(context, uri)
+        } catch (e: android.content.ActivityNotFoundException) {
+            try {
+                context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+            } catch (ignored: android.content.ActivityNotFoundException) {
+            }
+        }
+    }
 
     fun setRingtone(uri: String?, title: String?) = update { it.copy(ringtoneUri = uri, ringtoneTitle = title) }
 
@@ -319,6 +345,23 @@ private fun EditorContent(
             modifier = Modifier.clickable(onClick = onPickMusic),
             colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
         )
+        if (music != null && music.type != TidalItem.Type.TRACK) {
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.editor_shuffle)) },
+                trailingContent = { Switch(checked = alarm.shuffle, onCheckedChange = vm::setShuffle) },
+                modifier = Modifier.clickable { vm.setShuffle(!alarm.shuffle) },
+                colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.background),
+            )
+        }
+        if (alarm.needsWakeupPlaylist) {
+            val loggedIn by vm.tidalLoggedIn.collectAsStateWithLifecycle()
+            val canWrite by vm.tidalWriteAccess.collectAsStateWithLifecycle()
+            // Just logged in again: prepare right away.
+            LaunchedEffect(canWrite) {
+                if (canWrite && alarm.wakeupPreparedAt == null) vm.retryWakeup()
+            }
+            WakeupStatus(alarm, loggedIn, canWrite, onLogin = { vm.login(context) }, onRetry = vm::retryWakeup)
+        }
         var canOverlay by remember { mutableStateOf(android.provider.Settings.canDrawOverlays(context)) }
         androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
             canOverlay = android.provider.Settings.canDrawOverlays(context)
@@ -439,6 +482,30 @@ private fun EditorContent(
                 }) { Text(stringResource(R.string.sound_lavender_chime)) }
             },
         )
+    }
+}
+
+/** Whether the wake-up playlist for shuffle / My songs is ready, and what to do if not. */
+@Composable
+private fun WakeupStatus(alarm: Alarm, loggedIn: Boolean, canWrite: Boolean, onLogin: () -> Unit, onRetry: () -> Unit) {
+    val context = LocalContext.current
+    val preparedAt = alarm.wakeupPreparedAt
+    val (text, problem) = when {
+        !loggedIn -> stringResource(R.string.wakeup_login_needed) to true
+        !canWrite -> stringResource(R.string.wakeup_relogin_needed) to true
+        preparedAt == null -> stringResource(R.string.wakeup_preparing) to false
+        else -> stringResource(R.string.wakeup_ready, alarm.wakeupTrackCount, Format.dayAndTime(context, preparedAt)) to false
+    }
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+        Text(
+            text,
+            style = MaterialTheme.typography.bodySmall,
+            color = if (problem) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        when {
+            !loggedIn || !canWrite -> TextButton(onClick = onLogin) { Text(stringResource(R.string.action_login_tidal)) }
+            preparedAt == null -> TextButton(onClick = onRetry) { Text(stringResource(R.string.action_retry)) }
+        }
     }
 }
 

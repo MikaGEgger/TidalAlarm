@@ -9,6 +9,8 @@ import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.Update
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -35,7 +37,7 @@ interface AlarmDao {
     suspend fun delete(alarm: Alarm)
 }
 
-@Database(entities = [Alarm::class], version = 1, exportSchema = true)
+@Database(entities = [Alarm::class], version = 2, exportSchema = true)
 abstract class AlarmDatabase : RoomDatabase() {
     abstract fun alarms(): AlarmDao
 
@@ -46,7 +48,19 @@ abstract class AlarmDatabase : RoomDatabase() {
          */
         fun create(context: Context): AlarmDatabase {
             val storage = context.createDeviceProtectedStorageContext()
-            return Room.databaseBuilder(storage, AlarmDatabase::class.java, "alarms.db").build()
+            return Room.databaseBuilder(storage, AlarmDatabase::class.java, "alarms.db")
+                .addMigrations(MIGRATION_1_2)
+                .build()
+        }
+
+        /** 0.5.0: shuffle and wake-up playlists. Existing alarms keep everything else. */
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE alarms ADD COLUMN shuffle INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE alarms ADD COLUMN wakeupPlaylistId TEXT")
+                db.execSQL("ALTER TABLE alarms ADD COLUMN wakeupPreparedAt INTEGER")
+                db.execSQL("ALTER TABLE alarms ADD COLUMN wakeupTrackCount INTEGER NOT NULL DEFAULT 0")
+            }
         }
     }
 }

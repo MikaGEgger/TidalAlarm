@@ -19,6 +19,8 @@ import at.mikag.lavender.ui.ringing.RingingActivity
 import at.mikag.lavender.data.Alarm
 import at.mikag.lavender.data.TidalItem
 import at.mikag.lavender.tidal.TidalLauncher
+import at.mikag.lavender.tidal.WakeupPlaylists
+import at.mikag.lavender.ui.Format
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -116,12 +118,31 @@ class AlarmService : Service() {
             }
 
             val item = alarm.tidalItem
-            if (item != null && tidalUsable()) {
+            val playable = item?.let { playableItem(alarm, it) }
+            if (playable != null && tidalUsable()) {
                 // The alarm as loaded still carries its snooze time: this ring ends a snooze.
-                playTidal(alarm, item, resume = alarm.snoozedUntil != null)
+                playTidal(alarm, playable, resume = alarm.snoozedUntil != null)
             } else {
                 playBackup(alarm, tidalFailed = item != null)
             }
+        }
+    }
+
+    /** What to open in TIDAL. Shuffle and My songs play the wake-up playlist Lavender filled beforehand. */
+    private fun playableItem(alarm: Alarm, item: TidalItem): TidalItem? {
+        if (!alarm.needsWakeupPlaylist) return item
+        val wakeup = alarm.wakeupPlaylistId
+        if (wakeup != null) {
+            val filled = alarm.wakeupPreparedAt?.let { Format.dayAndTime(this, it) } ?: "never"
+            AppLog.i(TAG, "Playing wake-up playlist $wakeup (${alarm.wakeupTrackCount} songs, filled $filled, shuffle=${alarm.shuffle})")
+            return TidalItem(TidalItem.Type.PLAYLIST, wakeup, item.title, item.subtitle)
+        }
+        return if (item.type == TidalItem.Type.PLAYLIST) {
+            AppLog.w(TAG, "Wake-up playlist not ready: playing the playlist in its normal order")
+            item
+        } else {
+            AppLog.w(TAG, "Wake-up playlist for My songs not ready: backup sound")
+            null
         }
     }
 
@@ -322,6 +343,10 @@ class AlarmService : Service() {
                     }
                     Outcome.SILENCED -> Notifications.missed(context, alarm, startedAt, silenced = true)
                     Outcome.DISMISS -> Unit
+                }
+                // New songs (a new random pick) for the next time this alarm rings.
+                if (!testRun && outcome != Outcome.SNOOZE && alarm.isRepeating && alarm.needsWakeupPlaylist) {
+                    WakeupPlaylists.prepare(context, alarm.id)
                 }
                 if (container.settings.current().autoSendLogs) LogUpload.schedule(context, delaySeconds = 60)
             }

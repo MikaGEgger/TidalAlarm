@@ -14,8 +14,8 @@ android {
         applicationId = "at.mikag.lavender"
         minSdk = 26
         targetSdk = 36
-        versionCode = 7
-        versionName = "0.4.2"
+        versionCode = 8
+        versionName = "0.5.0"
 
         val clientId = (project.findProperty("tidalClientId") as String?).orEmpty().trim()
         buildConfigField("String", "TIDAL_CLIENT_ID", "\"$clientId\"")

@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Snooze
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.AlertDialog
@@ -113,6 +114,9 @@ class AlarmListViewModel(app: Application) : AndroidViewModel(app) {
             it.copy(enabled = enabled, snoozedUntil = null, skippedOccurrence = null, dateEpochDay = if (enabled) it.dateEpochDay?.takeIf { day -> day >= java.time.LocalDate.now().toEpochDay() } else it.dateEpochDay)
         }
         if (enabled) saved?.scheduledFor?.let { _messages.emit(Message.Scheduled(it)) }
+        if (enabled && saved != null && saved.needsWakeupPlaylist && saved.wakeupPreparedAt == null) {
+            at.mikag.lavender.tidal.WakeupPlaylists.prepare(getApplication(), saved.id)
+        }
     }
 
     fun skipNext(alarm: Alarm) = viewModelScope.launch { repo.skipNext(alarm.id) }
@@ -125,7 +129,11 @@ class AlarmListViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun restore(alarm: Alarm) = viewModelScope.launch {
-        repo.create(alarm.copy(id = 0, scheduledFor = null, snoozedUntil = null))
+        // Its wake-up playlist was deleted with it; the restored alarm gets a new one.
+        val restored = repo.create(
+            alarm.copy(id = 0, scheduledFor = null, snoozedUntil = null, wakeupPlaylistId = null, wakeupPreparedAt = null, wakeupTrackCount = 0)
+        )
+        if (restored.needsWakeupPlaylist) at.mikag.lavender.tidal.WakeupPlaylists.prepare(getApplication(), restored.id)
     }
 }
 
@@ -375,7 +383,17 @@ private fun AlarmCard(
                             color = MaterialTheme.colorScheme.primary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false),
                         )
+                        if (alarm.shuffle) {
+                            Spacer(Modifier.width(4.dp))
+                            Icon(
+                                Icons.Filled.Shuffle,
+                                contentDescription = stringResource(R.string.editor_shuffle),
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
                     }
                 }
             }

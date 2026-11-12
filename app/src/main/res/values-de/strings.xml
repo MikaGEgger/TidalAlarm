@@ -84,6 +84,13 @@
     <string name="editor_music_none">Keine. Tippe, um eine Playlist oder einen Titel zu wählen.</string>
     <string name="editor_tidal_missing">Die TIDAL-App ist nicht installiert: Es klingelt der Ersatzton.</string>
     <string name="editor_overlay_tip">Tipp: Erlaube „Über anderen Apps einblenden“, damit Schlummern und Beenden wieder vor TIDAL erscheinen. Tippe, um die Einstellung zu öffnen.</string>
+    <string name="editor_shuffle">Zufällige Reihenfolge</string>
+    <string name="wakeup_login_needed">Melde dich bei TIDAL an, um Zufallswiedergabe und Meine Songs zu nutzen.</string>
+    <string name="wakeup_relogin_needed">Melde dich noch einmal bei TIDAL an, damit Lavender seine Weck-Playlist anlegen darf (nötig für Zufallswiedergabe und Meine Songs).</string>
+    <string name="wakeup_preparing">Weck-Playlist in TIDAL wird vorbereitet …</string>
+    <string name="wakeup_ready">Weck-Playlist bereit: %1$d Songs, aktualisiert %2$s. Lavender wählt nach jedem Wecker neue Songs.</string>
+    <string name="my_songs">Meine Songs</string>
+    <string name="my_songs_text">Alle Titel, die du in TIDAL geliked hast</string>
     <string name="editor_backup_sound">Ersatzton</string>
     <string name="editor_alarm_sound">Weckton</string>
     <string name="editor_sound_explainer">Das Lavender-Klingeln funktioniert immer, auch direkt nach einem Neustart. Ein Ton vom Handy ist vor dem ersten Entsperren eventuell nicht verfügbar; dann klingelt stattdessen Lavender.</string>
@@ -153,6 +160,9 @@
     <string name="settings_tidal_app_text">Die Musik läuft in der TIDAL-App, mit deinem TIDAL-Abo.</string>
     <string name="settings_tidal_logged_in">Bei TIDAL angemeldet</string>
     <string name="settings_tidal_logged_out">Nicht bei TIDAL angemeldet</string>
+    <string name="settings_tidal_relogin">Neu anmelden</string>
+    <string name="settings_tidal_relogin_text">Einmal nötig für Zufallswiedergabe und Meine Songs: erlaubt Lavender, seine Weck-Playlists anzulegen.</string>
+    <string name="settings_tidal_wakeup_note">Für Zufallswiedergabe und Meine Songs führt Lavender pro Wecker eine nicht gelistete Playlist in deinem TIDAL-Konto („Lavender · …“) und füllt sie nach jedem Wecker neu. Löschst du den Wecker, wird auch die Playlist gelöscht.</string>
     <string name="settings_reliability">Zuverlässigkeit</string>
     <string name="reliability_notifications">Benachrichtigungen</string>
     <string name="reliability_notifications_text">Nötig zum Klingeln und für Schlummern/Beenden.</string>

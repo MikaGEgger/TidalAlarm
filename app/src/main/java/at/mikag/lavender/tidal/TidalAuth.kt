@@ -41,10 +41,21 @@ class TidalAuth(context: Context, private val http: OkHttpClient) {
     private val _loggedIn = MutableStateFlow(loadTokens() != null)
     val loggedIn: StateFlow<Boolean> = _loggedIn.asStateFlow()
 
+    /** Whether the login allows creating playlists (needed for shuffle and My songs). Older logins don't. */
+    private val _writeAccess = MutableStateFlow(loadTokens()?.scope?.contains(WRITE_SCOPE) == true)
+    val writeAccess: StateFlow<Boolean> = _writeAccess.asStateFlow()
+
     val isConfigured: Boolean get() = BuildConfig.TIDAL_CLIENT_ID.isNotBlank()
 
     @Serializable
-    private data class Tokens(val access: String, val refresh: String?, val expiresAt: Long, val userId: String? = null)
+    private data class Tokens(
+        val access: String,
+        val refresh: String?,
+        val expiresAt: Long,
+        val userId: String? = null,
+        /** Scopes TIDAL granted. Null for logins made before Lavender 0.5.0 (read-only). */
+        val scope: String? = null,
+    )
 
     @Serializable
     private data class TokenResponse(
@@ -52,6 +63,7 @@ class TidalAuth(context: Context, private val http: OkHttpClient) {
         @SerialName("refresh_token") val refreshToken: String? = null,
         @SerialName("expires_in") val expiresIn: Long = 3600,
         @SerialName("user_id") val userId: Long? = null,
+        val scope: String? = null,
     )
 
     class AuthException(message: String) : Exception(message)
@@ -103,10 +115,13 @@ class TidalAuth(context: Context, private val http: OkHttpClient) {
             AppLog.w("Tidal", "Login: code exchange failed", e)
             throw e
         }
-        AppLog.i("Tidal", "Login ok (token valid for ${response.expiresIn} s)")
+        // If TIDAL doesn't say which scopes it granted, assume the ones asked for; a refused write shows up later.
+        val granted = response.scope ?: SCOPES
+        AppLog.i("Tidal", "Login ok (token valid for ${response.expiresIn} s, scopes: $granted)")
         prefs.edit().remove(KEY_VERIFIER).remove(KEY_STATE).apply()
-        saveTokens(Tokens(response.accessToken, response.refreshToken, expiry(response), response.userId?.toString()))
+        saveTokens(Tokens(response.accessToken, response.refreshToken, expiry(response), response.userId?.toString(), granted))
         _loggedIn.value = true
+        _writeAccess.value = granted.contains(WRITE_SCOPE)
     }
 
     /** A valid access token, refreshed when it's about to expire. Null when logged out. */
@@ -121,11 +136,18 @@ class TidalAuth(context: Context, private val http: OkHttpClient) {
             .add("grant_type", "refresh_token")
             .add("client_id", BuildConfig.TIDAL_CLIENT_ID)
             .add("refresh_token", refresh)
-            .add("scope", SCOPES)
+            // Only ask for what this login was granted; asking for more on refresh could be refused.
+            .add("scope", tokens.scope ?: OLD_SCOPES)
             .build()
         try {
             val response = tokenRequest(body)
-            val updated = Tokens(response.accessToken, response.refreshToken ?: refresh, expiry(response), tokens.userId)
+            val updated = Tokens(
+                response.accessToken,
+                response.refreshToken ?: refresh,
+                expiry(response),
+                tokens.userId,
+                response.scope ?: tokens.scope,
+            )
             saveTokens(updated)
             updated.access
         } catch (e: AuthException) {
@@ -139,6 +161,13 @@ class TidalAuth(context: Context, private val http: OkHttpClient) {
     fun logout() {
         prefs.edit().remove(KEY_TOKENS).apply()
         _loggedIn.value = false
+        _writeAccess.value = false
+    }
+
+    /** TIDAL refused a playlist change (403): ask the user to log in again instead of retrying forever. */
+    fun markWriteDenied() {
+        loadTokens()?.let { saveTokens(it.copy(scope = it.scope?.replace(WRITE_SCOPE, "")?.trim())) }
+        _writeAccess.value = false
     }
 
     private suspend fun tokenRequest(body: FormBody): TokenResponse = withContext(Dispatchers.IO) {
@@ -194,7 +223,10 @@ class TidalAuth(context: Context, private val http: OkHttpClient) {
     private companion object {
         const val LOGIN_URL = "https://login.tidal.com/authorize"
         const val TOKEN_URL = "https://auth.tidal.com/v1/oauth2/token"
-        const val SCOPES = "user.read collection.read playlists.read"
+        const val WRITE_SCOPE = "playlists.write"
+        const val SCOPES = "user.read collection.read playlists.read $WRITE_SCOPE"
+        /** What logins before 0.5.0 were granted. */
+        const val OLD_SCOPES = "user.read collection.read playlists.read"
         const val KEY_ALIAS = "lavender_tidal_tokens"
         const val KEY_TOKENS = "tokens"
         const val KEY_VERIFIER = "pkce_verifier"

@@ -75,6 +75,7 @@ class SettingsViewModel(app: Application) : AndroidViewModel(app) {
 
     val settings: StateFlow<AppSettings> = repo.settings.stateIn(viewModelScope, SharingStarted.Eagerly, AppSettings())
     val loggedIn: StateFlow<Boolean> = auth.loggedIn
+    val writeAccess: StateFlow<Boolean> = auth.writeAccess
 
     fun update(change: (AppSettings) -> AppSettings) {
         viewModelScope.launch { repo.update(change) }
@@ -106,6 +107,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenLog: () -> Unit) {
     val context = LocalContext.current
     val settings by vm.settings.collectAsStateWithLifecycle()
     val loggedIn by vm.loggedIn.collectAsStateWithLifecycle()
+    val writeAccess by vm.writeAccess.collectAsStateWithLifecycle()
     var dialog by remember { mutableStateOf<Dialog?>(null) }
     var reliability by remember { mutableStateOf(Reliability.check(context)) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { reliability = Reliability.check(context) }
@@ -215,6 +217,19 @@ fun SettingsScreen(onBack: () -> Unit, onOpenLog: () -> Unit) {
             )
             if (loggedIn) {
                 SettingRow(stringResource(R.string.settings_tidal_logged_in), stringResource(R.string.action_logout), onClick = vm::logout)
+                if (!writeAccess) {
+                    SettingRow(
+                        stringResource(R.string.settings_tidal_relogin),
+                        stringResource(R.string.settings_tidal_relogin_text),
+                        onClick = { if (vm.configured) vm.login(context) },
+                    )
+                }
+                Text(
+                    stringResource(R.string.settings_tidal_wakeup_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                )
             } else {
                 SettingRow(
                     stringResource(R.string.settings_tidal_logged_out),

@@ -38,6 +38,7 @@ class AlarmRepository(
         scheduler.cancel(alarm)
         Notifications.cancelSnoozed(context, alarm.id)
         dao.delete(alarm)
+        alarm.wakeupPlaylistId?.let { at.mikag.lavender.tidal.WakeupPlaylists.discard(context, it) }
     }
 
     /** Applies [change] to the current stored version of the alarm, then saves. */

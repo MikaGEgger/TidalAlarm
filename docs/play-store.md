@@ -33,5 +33,6 @@ What's needed before Lavender can be published, and what each Play Console form 
 ## 4. TIDAL
 
 - TIDAL's developer terms apply to the app's use of the TIDAL login and API. Check them again before publishing, especially rules on naming and branding.
-- In the TIDAL dashboard, the app needs the scopes `user.read`, `collection.read`, `playlists.read` and the redirect `tidalarm://auth`.
+- In the TIDAL dashboard, the app needs the scopes `user.read`, `collection.read`, `playlists.read`, `playlists.write` and the redirect `tidalarm://auth`.
+- Shuffle and "My songs" use wake-up playlists that Lavender writes to the user's account (unlisted, one per alarm). The store description should say so.
 - Starting playback with `?play=true` links is undocumented TIDAL app behaviour. If a TIDAL update breaks it, alarms still ring with the backup sound.
