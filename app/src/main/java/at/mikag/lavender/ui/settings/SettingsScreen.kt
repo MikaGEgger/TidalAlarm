@@ -268,8 +268,14 @@ fun SettingsScreen(onBack: () -> Unit, onOpenLog: () -> Unit) {
                 title = stringResource(R.string.reliability_overlay),
                 text = stringResource(R.string.reliability_overlay_text),
                 onClick = { Reliability.openOverlaySettings(context) },
-                warnOnly = true,
             )
+            if (Reliability.isXiaomi) {
+                SettingRow(
+                    stringResource(R.string.reliability_xiaomi),
+                    stringResource(R.string.reliability_xiaomi_text),
+                    onClick = { Reliability.openXiaomiPermissions(context) },
+                )
+            }
             StatusRow(
                 ok = reliability.batteryUnrestricted,
                 title = stringResource(R.string.reliability_battery),

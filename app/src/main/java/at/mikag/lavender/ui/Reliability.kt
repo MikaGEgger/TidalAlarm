@@ -23,8 +23,11 @@ object Reliability {
         /** "Display over other apps": optional, brings the ringing screen back in front of TIDAL when unlocked. */
         val overlay: Boolean,
     ) {
-        /** Without these, alarms may be silent or not show over the lock screen. */
-        val critical: Boolean get() = notifications && fullScreen && exactAlarms
+        /**
+         * Without these, alarms may be silent, not show over the lock screen, or show only as a small
+         * notification on an unlocked phone (that's what "Display over other apps" prevents).
+         */
+        val critical: Boolean get() = notifications && fullScreen && exactAlarms && overlay
     }
 
     fun check(context: Context): Status = Status(
@@ -67,6 +70,22 @@ object Reliability {
 
     fun openAppLanguage(context: Context) {
         if (Build.VERSION.SDK_INT >= 33) open(context, Intent(Settings.ACTION_APP_LOCALE_SETTINGS, packageUri(context)))
+    }
+
+    /** Xiaomi/Redmi/POCO (MIUI, HyperOS) have their own switch for apps opening screens in the background. */
+    val isXiaomi: Boolean
+        get() = listOf(Build.MANUFACTURER, Build.BRAND).any { it.lowercase(Locale.ROOT) in setOf("xiaomi", "redmi", "poco") }
+
+    /** Opens Xiaomi's per-app permission list ("Other permissions"), else the normal app info. */
+    fun openXiaomiPermissions(context: Context) {
+        val miui = Intent("miui.intent.action.APP_PERM_EDITOR")
+            .setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.PermissionsEditorActivity")
+            .putExtra("extra_pkgname", context.packageName)
+        try {
+            context.startActivity(miui.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } catch (e: Exception) {
+            openAppDetails(context)
+        }
     }
 
     /** dontkillmyapp.com has step-by-step instructions per phone maker for keeping apps alive. */

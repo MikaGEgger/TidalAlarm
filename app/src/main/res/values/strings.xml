@@ -24,8 +24,6 @@
     <string name="action_use">Use</string>
     <string name="action_allow">Allow</string>
     <string name="action_play_music">Play music</string>
-    <string name="overlay_prompt_title">Start your TIDAL music every time</string>
-    <string name="overlay_prompt_text">If the phone is unlocked or in use when an alarm goes off, Android only shows a small pop-up. Lavender then isn\'t allowed to start TIDAL, and the chime plays instead. Allow \"Display over other apps\" for Lavender, and your music starts every time.</string>
     <string name="action_later">Later</string>
     <string name="action_refresh">Refresh</string>
     <string name="action_copy">Copy</string>
@@ -70,7 +68,7 @@
     <string name="reliability_banner_title">Alarms might not ring</string>
     <string name="reliability_banner_text">A permission is missing. Tap to fix it.</string>
     <string name="permission_prompt_title">Allow alarms to ring</string>
-    <string name="permission_prompt_text">Without this, alarms can\'t show over the lock screen and only play the backup sound in the dark. Missing: %1$s. Tap Allow and switch it on for Lavender.</string>
+    <string name="permission_prompt_text">Lavender needs this so alarms always ring full screen: over the lock screen and when the phone is unlocked. Missing: %1$s. Tap Allow and switch it on for Lavender; if more is missing, you\'ll be asked again.</string>
 
     <!-- Editor -->
     <string name="editor_title">Alarm</string>
@@ -172,7 +170,9 @@
     <string name="reliability_exact">Alarms &amp; reminders</string>
     <string name="reliability_exact_text">Needed to ring on the minute.</string>
     <string name="reliability_overlay">Display over other apps</string>
-    <string name="reliability_overlay_text">Recommended with TIDAL music: brings Snooze and Dismiss back in front of TIDAL, also when the phone isn\'t locked.</string>
+    <string name="reliability_overlay_text">Needed so the alarm shows full screen when the phone is unlocked (instead of a small pop-up), and comes back in front of TIDAL.</string>
+    <string name="reliability_xiaomi">Xiaomi: pop-ups in the background</string>
+    <string name="reliability_xiaomi_text">On Xiaomi phones, also allow \"Display pop-up windows while running in the background\" and \"Show on Lock screen\" for Lavender. Tap to open the list.</string>
     <string name="reliability_battery">Battery: unrestricted</string>
     <string name="reliability_battery_text">Recommended. Some phones stop apps in the background; open App info → Battery → Unrestricted.</string>
     <string name="reliability_phone_tips">Tips for %1$s phones</string>

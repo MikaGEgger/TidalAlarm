@@ -23,8 +23,6 @@
     <string name="action_use">Verwenden</string>
     <string name="action_allow">Erlauben</string>
     <string name="action_play_music">Musik abspielen</string>
-    <string name="overlay_prompt_title">TIDAL-Musik jedes Mal starten</string>
-    <string name="overlay_prompt_text">Ist das Handy entsperrt oder in Benutzung, wenn ein Wecker klingelt, zeigt Android nur eine kleine Einblendung. Dann darf Lavender TIDAL nicht starten, und es klingelt der Ersatzton. Erlaube „Über anderen Apps einblenden“ für Lavender, dann startet deine Musik jedes Mal.</string>
     <string name="action_later">Später</string>
     <string name="action_refresh">Aktualisieren</string>
     <string name="action_copy">Kopieren</string>
@@ -69,7 +67,7 @@
     <string name="reliability_banner_title">Wecker klingeln vielleicht nicht</string>
     <string name="reliability_banner_text">Eine Berechtigung fehlt. Tippe, um das zu beheben.</string>
     <string name="permission_prompt_title">Wecker klingeln lassen</string>
-    <string name="permission_prompt_text">Ohne diese Berechtigung können Wecker nicht über dem Sperrbildschirm erscheinen und spielen nur den Ersatzton bei dunklem Bildschirm. Fehlt: %1$s. Tippe auf Erlauben und schalte es für Lavender ein.</string>
+    <string name="permission_prompt_text">Lavender braucht das, damit Wecker immer im Vollbild klingeln: über dem Sperrbildschirm und bei entsperrtem Handy. Fehlt: %1$s. Tippe auf Erlauben und schalte es für Lavender ein; fehlt noch mehr, wirst du erneut gefragt.</string>
 
     <!-- Bearbeiten -->
     <string name="editor_title">Wecker</string>
@@ -171,7 +169,9 @@
     <string name="reliability_exact">Wecker &amp; Erinnerungen</string>
     <string name="reliability_exact_text">Nötig, um auf die Minute genau zu klingeln.</string>
     <string name="reliability_overlay">Über anderen Apps einblenden</string>
-    <string name="reliability_overlay_text">Empfohlen mit TIDAL-Musik: Holt Schlummern und Beenden wieder vor TIDAL, auch wenn das Handy nicht gesperrt ist.</string>
+    <string name="reliability_overlay_text">Nötig, damit der Wecker bei entsperrtem Handy im Vollbild erscheint (statt einer kleinen Einblendung) und wieder vor TIDAL kommt.</string>
+    <string name="reliability_xiaomi">Xiaomi: Einblendungen im Hintergrund</string>
+    <string name="reliability_xiaomi_text">Auf Xiaomi-Handys zusätzlich „Pop-up-Fenster anzeigen, während im Hintergrund ausgeführt“ und „Auf Sperrbildschirm anzeigen“ für Lavender erlauben. Tippe, um die Liste zu öffnen.</string>
     <string name="reliability_battery">Akku: nicht eingeschränkt</string>
     <string name="reliability_battery_text">Empfohlen. Manche Handys stoppen Apps im Hintergrund; öffne App-Info → Akku → Nicht eingeschränkt.</string>
     <string name="reliability_phone_tips">Tipps für %1$s-Handys</string>

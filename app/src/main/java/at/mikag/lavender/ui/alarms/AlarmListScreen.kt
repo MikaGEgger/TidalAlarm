@@ -157,7 +157,6 @@ fun AlarmListScreen(onOpenAlarm: (Long) -> Unit, onOpenSettings: () -> Unit) {
     var reliability by remember { mutableStateOf(Reliability.check(context)) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { reliability = Reliability.check(context) }
     var permissionPromptDismissed by rememberSaveable { mutableStateOf(false) }
-    var overlayPromptDismissed by rememberSaveable { mutableStateOf(false) }
 
     val undoLabel = stringResource(R.string.action_undo)
     val deletedText = stringResource(R.string.message_alarm_deleted)
@@ -233,22 +232,8 @@ fun AlarmListScreen(onOpenAlarm: (Long) -> Unit, onOpenSettings: () -> Unit) {
         }
     }
 
-    val usesTidal = alarms.orEmpty().any { it.enabled && it.tidalItem != null }
     if (!reliability.critical && !permissionPromptDismissed) {
         PermissionPrompt(reliability, onDismiss = { permissionPromptDismissed = true })
-    } else if (reliability.critical && usesTidal && !reliability.overlay && !overlayPromptDismissed) {
-        AlertDialog(
-            onDismissRequest = { overlayPromptDismissed = true },
-            title = { Text(stringResource(R.string.overlay_prompt_title)) },
-            text = { Text(stringResource(R.string.overlay_prompt_text)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    overlayPromptDismissed = true
-                    Reliability.openOverlaySettings(context)
-                }) { Text(stringResource(R.string.action_allow)) }
-            },
-            dismissButton = { TextButton(onClick = { overlayPromptDismissed = true }) { Text(stringResource(R.string.action_later)) } },
-        )
     }
 
     if (showTimePicker) {
@@ -303,6 +288,7 @@ private fun PermissionPrompt(status: Reliability.Status, onDismiss: () -> Unit) 
         if (!status.notifications) add(stringResource(R.string.reliability_notifications))
         if (!status.fullScreen) add(stringResource(R.string.reliability_full_screen))
         if (!status.exactAlarms) add(stringResource(R.string.reliability_exact))
+        if (!status.overlay) add(stringResource(R.string.reliability_overlay))
     }
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -315,7 +301,8 @@ private fun PermissionPrompt(status: Reliability.Status, onDismiss: () -> Unit) 
                 when {
                     !status.notifications -> Reliability.openNotificationSettings(context)
                     !status.fullScreen -> Reliability.openFullScreenSettings(context)
-                    else -> Reliability.openExactAlarmSettings(context)
+                    !status.exactAlarms -> Reliability.openExactAlarmSettings(context)
+                    else -> Reliability.openOverlaySettings(context)
                 }
             }) { Text(stringResource(R.string.action_allow)) }
         },

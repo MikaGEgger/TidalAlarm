@@ -107,6 +107,8 @@ class AlarmService : Service() {
             }
             goForeground(alarm, null)
             logRingContext(alarm)
+            // Don't wait for Android: on an unlocked phone the full-screen notification only shows a pop-up.
+            openScreenDirectly("alarm started")
             if (alarm.vibrate) vibration = AlarmVibration(this@AlarmService).also { it.start() }
 
             val silenceAfter = withContext(Dispatchers.IO) { container.settings.current().silenceAfterMinutes }
@@ -147,8 +149,7 @@ class AlarmService : Service() {
     }
 
     /**
-     * Everything that decides whether the ringing screen can appear. If full-screen alarms aren't allowed,
-     * also try opening the screen directly (Android may block that, but it costs nothing to try).
+     * Everything that decides whether the ringing screen can appear.
      */
     private fun logRingContext(alarm: Alarm) {
         val notifications = getSystemService(NotificationManager::class.java)
@@ -163,15 +164,22 @@ class AlarmService : Service() {
                 " locked=${getSystemService(KeyguardManager::class.java).isKeyguardLocked}" +
                 " userUnlocked=${getSystemService(UserManager::class.java).isUserUnlocked}" +
                 " | tidalInstalled=${TidalLauncher.isInstalled(this)} music=${alarm.tidalItem?.let { "${it.type.path}/${it.id}" }}" +
-                " volume=${alarm.volumePercent}% ramp=${alarm.rampSeconds}s",
+                " volume=${alarm.volumePercent}% ramp=${alarm.rampSeconds}s" +
+                " displayOverOtherApps=${Settings.canDrawOverlays(this)}",
         )
-        if (!fullScreen || !enabled) {
-            AppLog.w(TAG, "Full-screen alarm not possible (permission missing): trying to open the ringing screen directly")
-            try {
-                startActivity(Intent(this, RingingActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            } catch (e: RuntimeException) {
-                AppLog.w(TAG, "Opening the ringing screen directly failed", e)
-            }
+    }
+
+    /**
+     * Opens the ringing screen without waiting for the full-screen notification. Always allowed with
+     * "Display over other apps"; without it, Android decides (some phones allow it, some don't).
+     */
+    private fun openScreenDirectly(reason: String) {
+        if (RingController.screenVisible.value) return
+        AppLog.i(TAG, "Opening the ringing screen directly ($reason)")
+        try {
+            startActivity(Intent(this, RingingActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } catch (e: RuntimeException) {
+            AppLog.w(TAG, "Opening the ringing screen directly failed", e)
         }
     }
 
@@ -279,7 +287,12 @@ class AlarmService : Service() {
             return true
         }
         Notifications.reshowRingingScreen(this, alarm)
-        val back = waitForScreen(2_500)
+        var back = waitForScreen(2_500)
+        if (!back) {
+            // One more direct try: some phones allow it a moment later.
+            openScreenDirectly("second try")
+            back = waitForScreen(1_500)
+        }
         AppLog.i(
             TAG,
             if (back) "Ringing screen back in front (full-screen notification)"
