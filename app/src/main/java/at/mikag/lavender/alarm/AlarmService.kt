@@ -231,6 +231,7 @@ class AlarmService : Service() {
                 break
             }
             val openedAt = System.currentTimeMillis()
+            var viaPlayKey = false
 
             val playing = coroutineScope {
                 // TIDAL is now in front of the ringing screen. Bring Snooze/Dismiss back on top as soon as
@@ -240,14 +241,32 @@ class AlarmService : Service() {
                     delay(BRING_BACK_LATEST_MS)
                     bringScreenBack(alarm, "${BRING_BACK_LATEST_MS / 1000} s after opening TIDAL")
                 }
-                val ok = audio.waitForMusic(if (index == 0) FIRST_LINK_WAIT_MS else NEXT_LINK_WAIT_MS)
+                val ok = if (index == 0) {
+                    audio.waitForMusic(PLAY_KEY_AFTER_MS) || run {
+                        // TIDAL ignores the play link when it still has this playlist loaded and paused, e.g.
+                        // from the last alarm (its app stayed alive overnight). The Play key resumes it.
+                        AppLog.i(TAG, "No music ${PLAY_KEY_AFTER_MS / 1000} s after link 1: sending the Play key (TIDAL may still have it loaded and paused)")
+                        audio.sendPlayKey()
+                        audio.waitForMusic(FIRST_LINK_WAIT_MS - PLAY_KEY_AFTER_MS).also { viaPlayKey = it }
+                    }
+                } else {
+                    audio.waitForMusic(NEXT_LINK_WAIT_MS)
+                }
                 if (ok && latest.isActive) {
                     latest.cancel()
                     bringScreenBack(alarm, "music started")
                 }
                 ok
             }
-            AppLog.i(TAG, if (playing) "Music detected ${System.currentTimeMillis() - openedAt} ms after opening link ${index + 1}" else "No music after link ${index + 1}")
+            AppLog.i(
+                TAG,
+                if (playing) {
+                    "Music detected ${System.currentTimeMillis() - openedAt} ms after opening link ${index + 1}" +
+                        if (viaPlayKey) " (started by the Play key)" else ""
+                } else {
+                    "No music after link ${index + 1}"
+                },
+            )
             if (playing) {
                 keepPlaying(alarm, item)
                 return
@@ -439,6 +458,8 @@ class AlarmService : Service() {
         private const val BRING_BACK_LATEST_MS = 8_000L
         private const val RESUME_WAIT_MS = 5_000L
         private const val FIRST_LINK_WAIT_MS = 15_000L
+        /** TIDAL started within 1–6 s of the link on all test phones; silence after this means it ignored the link. */
+        private const val PLAY_KEY_AFTER_MS = 8_000L
         private const val NEXT_LINK_WAIT_MS = 10_000L
         private const val TIDAL_SILENCE_LIMIT_MS = 10_000L
         private const val MAX_RING_MS = 60 * 60 * 1000L
